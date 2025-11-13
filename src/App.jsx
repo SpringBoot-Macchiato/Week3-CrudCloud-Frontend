@@ -1,6 +1,7 @@
 import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom'
 import { AuthProvider } from './contexts/AuthContext'
 import { ThemeProvider } from './contexts/ThemeContext'
+import Landing from './pages/Landing'
 import Login from './pages/Login'
 import Dashboard from './pages/Dashboard'
 import Motores from './pages/Motores'
@@ -16,9 +17,10 @@ function App() {
       <AuthProvider>
         <BrowserRouter>
         <Routes>
+          <Route path="/" element={<Landing />} />
           <Route path="/login" element={<Login />} />
-          <Route path="/" element={<ProtectedRoute><DashboardLayout /></ProtectedRoute>}>
-            <Route index element={<Navigate to="/dashboard" replace />} />
+          <Route path="/app" element={<ProtectedRoute><DashboardLayout /></ProtectedRoute>}>
+            <Route index element={<Navigate to="/app/dashboard" replace />} />
             <Route path="dashboard" element={<Dashboard />} />
             <Route path="motores" element={<Motores />} />
             <Route path="instancias" element={<Instancias />} />

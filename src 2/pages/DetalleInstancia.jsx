@@ -31,17 +31,17 @@ const DetalleInstancia = () => {
   return (
     <div className="space-y-8">
       <button
-        onClick={() => navigate('/app/instancias')}
-        className="flex items-center gap-2 text-slate-600 dark:text-slate-300 hover:text-text dark:hover:text-white transition-colors"
+        onClick={() => navigate('/instancias')}
+        className="flex items-center gap-2 text-slate-600 hover:text-text transition-colors"
       >
         <ArrowLeft size={20} />
         Volver a instancias
       </button>
 
       <div>
-        <h1 className="text-3xl font-semibold text-text dark:text-white mb-2">{instancia.nombre}</h1>
+        <h1 className="text-3xl font-semibold text-text mb-2">{instancia.nombre}</h1>
         <div className="flex items-center gap-3">
-          <span className="text-slate-500 dark:text-slate-400">{instancia.motor}</span>
+          <span className="text-slate-500">{instancia.motor}</span>
           <span
             className={`px-3 py-1 rounded-full text-xs font-medium ${
               instancia.estado === 'RUNNING'
@@ -55,12 +55,12 @@ const DetalleInstancia = () => {
       </div>
 
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-        <div className="bg-white dark:bg-slate-900 rounded-xl border border-border dark:border-slate-700 p-6">
-          <h2 className="text-lg font-semibold text-text dark:text-white mb-4">Credenciales de acceso</h2>
+        <div className="bg-white rounded-xl border border-border p-6">
+          <h2 className="text-lg font-semibold text-text mb-4">Credenciales de acceso</h2>
           <div className="space-y-4">
             {Object.entries(instancia.credenciales).map(([key, value]) => (
               <div key={key} className="space-y-2">
-                <label className="block text-sm font-medium text-text dark:text-white capitalize">
+                <label className="block text-sm font-medium text-text capitalize">
                   {key === 'password' ? 'Contraseña' : key === 'base' ? 'Base de datos' : key}
                 </label>
                 <div className="flex items-center gap-2">
@@ -68,33 +68,33 @@ const DetalleInstancia = () => {
                     type={key === 'password' && !showPassword ? 'password' : 'text'}
                     value={value}
                     readOnly
-                    className="flex-1 px-4 py-2.5 border border-border dark:border-slate-700 rounded-lg bg-slate-50 dark:bg-slate-800 text-text dark:text-white font-mono text-sm"
+                    className="flex-1 px-4 py-2.5 border border-border rounded-lg bg-slate-50 text-text font-mono text-sm"
                   />
                   {key === 'password' && (
                     <button
                       onClick={() => setShowPassword(!showPassword)}
-                      className="p-2.5 rounded-lg border border-border dark:border-slate-700 hover:bg-slate-50 dark:hover:bg-slate-800 transition-colors"
+                      className="p-2.5 rounded-lg border border-border hover:bg-slate-50 transition-colors"
                     >
-                      {showPassword ? <EyeOff size={18} className="dark:text-slate-300" /> : <Eye size={18} className="dark:text-slate-300" />}
+                      {showPassword ? <EyeOff size={18} /> : <Eye size={18} />}
                     </button>
                   )}
                   <button
                     onClick={() => handleCopy(value, key)}
-                    className="p-2.5 rounded-lg border border-border dark:border-slate-700 hover:bg-slate-50 dark:hover:bg-slate-800 transition-colors"
+                    className="p-2.5 rounded-lg border border-border hover:bg-slate-50 transition-colors"
                   >
-                    <Copy size={18} className={`dark:text-slate-300 ${copied === key ? 'text-success' : ''}`} />
+                    <Copy size={18} className={copied === key ? 'text-success' : ''} />
                   </button>
                 </div>
               </div>
             ))}
           </div>
 
-          <div className="mt-6 pt-6 border-t border-border dark:border-slate-700 space-y-3">
-            <button className="w-full flex items-center justify-center gap-2 px-4 py-2.5 border border-border dark:border-slate-700 rounded-lg font-medium text-text dark:text-white hover:bg-slate-50 dark:hover:bg-slate-800 transition-colors">
+          <div className="mt-6 pt-6 border-t border-border space-y-3">
+            <button className="w-full flex items-center justify-center gap-2 px-4 py-2.5 border border-border rounded-lg font-medium hover:bg-slate-50 transition-colors">
               <RotateCw size={18} />
               Rotar contraseña
             </button>
-            <button className="w-full flex items-center justify-center gap-2 px-4 py-2.5 border border-border dark:border-slate-700 rounded-lg font-medium text-text dark:text-white hover:bg-slate-50 dark:hover:bg-slate-800 transition-colors">
+            <button className="w-full flex items-center justify-center gap-2 px-4 py-2.5 border border-border rounded-lg font-medium hover:bg-slate-50 transition-colors">
               <Download size={18} />
               Descargar PDF
             </button>
@@ -102,20 +102,20 @@ const DetalleInstancia = () => {
         </div>
 
         <div className="space-y-6">
-          <div className="bg-white dark:bg-slate-900 rounded-xl border border-border dark:border-slate-700 p-6">
-            <h2 className="text-lg font-semibold text-text dark:text-white mb-4">Información</h2>
+          <div className="bg-white rounded-xl border border-border p-6">
+            <h2 className="text-lg font-semibold text-text mb-4">Información</h2>
             <div className="space-y-3">
               <div className="flex justify-between">
-                <span className="text-slate-500 dark:text-slate-400">Fecha de creación</span>
-                <span className="text-text dark:text-white font-medium">{instancia.fecha}</span>
+                <span className="text-slate-500">Fecha de creación</span>
+                <span className="text-text font-medium">{instancia.fecha}</span>
               </div>
               <div className="flex justify-between">
-                <span className="text-slate-500 dark:text-slate-400">Motor</span>
-                <span className="text-text dark:text-white font-medium">{instancia.motor}</span>
+                <span className="text-slate-500">Motor</span>
+                <span className="text-text font-medium">{instancia.motor}</span>
               </div>
               <div className="flex justify-between">
-                <span className="text-slate-500 dark:text-slate-400">Estado</span>
-                <span className="text-text dark:text-white font-medium">{instancia.estado}</span>
+                <span className="text-slate-500">Estado</span>
+                <span className="text-text font-medium">{instancia.estado}</span>
               </div>
             </div>
           </div>

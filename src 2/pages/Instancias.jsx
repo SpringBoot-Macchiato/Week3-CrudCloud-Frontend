@@ -36,11 +36,11 @@ const Instancias = () => {
     <div className="space-y-8">
       <div className="flex items-center justify-between">
         <div>
-          <h1 className="text-3xl font-semibold text-text dark:text-white mb-2">Mis instancias</h1>
-          <p className="text-slate-500 dark:text-slate-400">Gestiona tus bases de datos en la nube</p>
+          <h1 className="text-3xl font-semibold text-text mb-2">Mis instancias</h1>
+          <p className="text-slate-500">Gestiona tus bases de datos en la nube</p>
         </div>
         <button
-          onClick={() => navigate('/app/motores')}
+          onClick={() => navigate('/motores')}
           className="flex items-center gap-2 px-4 py-2.5 bg-primary text-white rounded-lg font-medium hover:bg-primary/90 transition-colors"
         >
           <Plus size={20} />
@@ -48,26 +48,26 @@ const Instancias = () => {
         </button>
       </div>
 
-      <div className="bg-white dark:bg-slate-900 rounded-xl border border-border dark:border-slate-700 overflow-hidden">
+      <div className="bg-white rounded-xl border border-border overflow-hidden">
         <div className="overflow-x-auto">
           <table className="w-full">
             <thead>
-              <tr className="border-b border-border dark:border-slate-700 bg-slate-50/50 dark:bg-slate-800/50">
-                <th className="text-left px-6 py-4 text-sm font-medium text-text dark:text-white">Motor</th>
-                <th className="text-left px-6 py-4 text-sm font-medium text-text dark:text-white">Nombre</th>
-                <th className="text-left px-6 py-4 text-sm font-medium text-text dark:text-white">Estado</th>
-                <th className="text-left px-6 py-4 text-sm font-medium text-text dark:text-white">Fecha</th>
-                <th className="text-right px-6 py-4 text-sm font-medium text-text dark:text-white">Acciones</th>
+              <tr className="border-b border-border bg-slate-50/50">
+                <th className="text-left px-6 py-4 text-sm font-medium text-text">Motor</th>
+                <th className="text-left px-6 py-4 text-sm font-medium text-text">Nombre</th>
+                <th className="text-left px-6 py-4 text-sm font-medium text-text">Estado</th>
+                <th className="text-left px-6 py-4 text-sm font-medium text-text">Fecha</th>
+                <th className="text-right px-6 py-4 text-sm font-medium text-text">Acciones</th>
               </tr>
             </thead>
-            <tbody className="divide-y divide-border dark:divide-slate-700">
+            <tbody className="divide-y divide-border">
               {instancias.map((instancia) => (
-                <tr key={instancia.id} className="hover:bg-slate-50/50 dark:hover:bg-slate-800/50 transition-colors">
+                <tr key={instancia.id} className="hover:bg-slate-50/50 transition-colors">
                   <td className="px-6 py-4">
-                    <span className="font-medium text-text dark:text-white">{instancia.motor}</span>
+                    <span className="font-medium text-text">{instancia.motor}</span>
                   </td>
                   <td className="px-6 py-4">
-                    <span className="text-slate-600 dark:text-slate-300">{instancia.nombre}</span>
+                    <span className="text-slate-600">{instancia.nombre}</span>
                   </td>
                   <td className="px-6 py-4">
                     <span
@@ -83,16 +83,16 @@ const Instancias = () => {
                     </span>
                   </td>
                   <td className="px-6 py-4">
-                    <span className="text-slate-600 dark:text-slate-300">{instancia.fecha}</span>
+                    <span className="text-slate-600">{instancia.fecha}</span>
                   </td>
                   <td className="px-6 py-4">
                     <div className="flex items-center justify-end gap-2">
                       <button
-                        onClick={() => navigate(`/app/instancias/${instancia.id}`)}
-                        className="p-2 rounded-lg hover:bg-slate-100 dark:hover:bg-slate-700 transition-colors"
+                        onClick={() => navigate(`/instancias/${instancia.id}`)}
+                        className="p-2 rounded-lg hover:bg-slate-100 transition-colors"
                         title="Ver detalles"
                       >
-                        <Eye size={18} className="text-slate-600 dark:text-slate-300" />
+                        <Eye size={18} className="text-slate-600" />
                       </button>
                       {instancia.estado === 'RUNNING' ? (
                         <button
