@@ -29,7 +29,7 @@ RUN npm install -g serve
 WORKDIR /usr/src/app
 
 # Copia la build generada del stage anterior
-COPY --from=builder /app/build /usr/src/app
+COPY --from=builder /app/dist /usr/src/app
 
 # Puerto interno del contenedor (donde escucha 'serve')
 EXPOSE 3000
