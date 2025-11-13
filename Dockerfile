@@ -1,20 +1,38 @@
-# Etapa 1: Build
-FROM node:18-alpine as build
+# ----------------------------------------------------
+# STAGE 1: Build (para generar los archivos estáticos)
+# ----------------------------------------------------
+FROM node:20 as builder
 
+# Directorio de trabajo
 WORKDIR /app
 
-COPY package*.json ./
-RUN npm ci
+# Copia los archivos de configuración de dependencias
+COPY package.json ./
 
+# Instala las dependencias
+RUN npm install
+
+# Copia el código fuente y genera el build de producción
 COPY . .
 RUN npm run build
 
-# Etapa 2: Servir con Nginx
-FROM nginx:alpine
+# ----------------------------------------------------
+# STAGE 2: Producción (solo para servir la build)
+# ----------------------------------------------------
+# Usa una imagen base más ligera (Alpine)
+FROM node:20-alpine
 
-COPY --from=build /app/dist /usr/share/nginx/html
-COPY nginx.conf /etc/nginx/conf.d/default.conf
+# Instala 'serve' globalmente
+RUN npm install -g serve
 
-EXPOSE 80
+# Directorio de trabajo
+WORKDIR /usr/src/app
 
-CMD ["nginx", "-g", "daemon off;"]
+# Copia la build generada del stage anterior
+COPY --from=builder /app/build /usr/src/app
+
+# Puerto interno del contenedor (donde escucha 'serve')
+EXPOSE 3000
+
+# Comando para iniciar el servidor 'serve'
+CMD ["serve", "-s", "-l", "tcp://0.0.0.0:3000"]
