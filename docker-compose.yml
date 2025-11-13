@@ -15,7 +15,7 @@ services:
     # para evitar el conflicto con Grafana (que usa 3000).
     # Apunta al puerto 3000 interno del contenedor.
     ports:
-      - "3001:3000"
+      - "3002:3000"
       
     # Siempre reinicia si el contenedor se detiene
     restart: always
