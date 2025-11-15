@@ -1,8 +1,12 @@
+import { useState } from 'react'
 import { useNavigate } from 'react-router-dom'
-import { Database, Zap, Shield, Code, CheckCircle, ArrowRight, Github } from 'lucide-react'
+import { Database, Zap, Shield, Code, CheckCircle, ArrowRight, Github, Menu, X, Moon, Sun } from 'lucide-react'
+import { useTheme } from '../contexts/ThemeContext'
 
 const Landing = () => {
   const navigate = useNavigate()
+  const [mobileMenuOpen, setMobileMenuOpen] = useState(false)
+  const { darkMode, toggleDarkMode } = useTheme()
 
   const features = [
     {
@@ -53,18 +57,31 @@ const Landing = () => {
     <div className="min-h-screen bg-background dark:bg-slate-950">
       {/* Navbar */}
       <nav className="fixed top-0 w-full bg-white/80 dark:bg-slate-900/80 backdrop-blur-md border-b border-border dark:border-slate-700 z-50">
-        <div className="max-w-7xl mx-auto px-6 h-16 flex items-center justify-between">
+        <div className="max-w-7xl mx-auto px-4 md:px-6 h-16 flex items-center justify-between">
           <div className="flex items-center gap-2">
-            <Database className="text-primary" size={28} />
-            <span className="text-xl font-semibold text-text dark:text-white">CrudCloud</span>
+            <Database className="text-primary" size={24} md:size={28} />
+            <span className="text-lg md:text-xl font-semibold text-text dark:text-white">CrudCloud</span>
           </div>
-          <div className="flex items-center gap-4">
+
+          {/* Desktop Menu */}
+          <div className="hidden md:flex items-center gap-4">
             <a href="#features" className="text-slate-600 dark:text-slate-300 hover:text-text dark:hover:text-white transition-colors">
               Features
             </a>
             <a href="#pricing" className="text-slate-600 dark:text-slate-300 hover:text-text dark:hover:text-white transition-colors">
               Pricing
             </a>
+            <button
+              onClick={toggleDarkMode}
+              className="p-2 rounded-lg hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors"
+              title={darkMode ? "Cambiar a modo claro" : "Cambiar a modo oscuro"}
+            >
+              {darkMode ? (
+                <Sun size={20} className="text-slate-600 dark:text-slate-300" />
+              ) : (
+                <Moon size={20} className="text-slate-600 dark:text-slate-300" />
+              )}
+            </button>
             <button
               onClick={() => navigate('/login')}
               className="px-4 py-2 text-slate-600 dark:text-slate-300 hover:text-text dark:hover:text-white transition-colors"
@@ -78,34 +95,104 @@ const Landing = () => {
               Comenzar gratis
             </button>
           </div>
+
+          {/* Mobile Menu Button */}
+          <button
+            onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
+            className="md:hidden p-2 rounded-lg hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors"
+          >
+            {mobileMenuOpen ? (
+              <X size={24} className="text-slate-600 dark:text-slate-300" />
+            ) : (
+              <Menu size={24} className="text-slate-600 dark:text-slate-300" />
+            )}
+          </button>
         </div>
+
+        {/* Mobile Menu */}
+        {mobileMenuOpen && (
+          <div className="md:hidden bg-white dark:bg-slate-900 border-t border-border dark:border-slate-700">
+            <div className="px-4 py-4 space-y-3">
+              <a
+                href="#features"
+                onClick={() => setMobileMenuOpen(false)}
+                className="block py-2 text-slate-600 dark:text-slate-300 hover:text-text dark:hover:text-white transition-colors"
+              >
+                Features
+              </a>
+              <a
+                href="#pricing"
+                onClick={() => setMobileMenuOpen(false)}
+                className="block py-2 text-slate-600 dark:text-slate-300 hover:text-text dark:hover:text-white transition-colors"
+              >
+                Pricing
+              </a>
+              <button
+                onClick={toggleDarkMode}
+                className="w-full flex items-center gap-3 py-2 text-slate-600 dark:text-slate-300 hover:text-text dark:hover:text-white transition-colors"
+              >
+                {darkMode ? (
+                  <>
+                    <Sun size={20} />
+                    <span>Modo claro</span>
+                  </>
+                ) : (
+                  <>
+                    <Moon size={20} />
+                    <span>Modo oscuro</span>
+                  </>
+                )}
+              </button>
+              <div className="border-t border-border dark:border-slate-700 pt-3">
+                <button
+                  onClick={() => {
+                    setMobileMenuOpen(false)
+                    navigate('/login')
+                  }}
+                  className="w-full py-2 text-left text-slate-600 dark:text-slate-300 hover:text-text dark:hover:text-white transition-colors"
+                >
+                  Iniciar sesión
+                </button>
+                <button
+                  onClick={() => {
+                    setMobileMenuOpen(false)
+                    navigate('/login')
+                  }}
+                  className="w-full py-2.5 bg-primary text-white rounded-lg hover:bg-primary/90 transition-colors text-center mt-2"
+                >
+                  Comenzar gratis
+                </button>
+              </div>
+            </div>
+          </div>
+        )}
       </nav>
 
       {/* Hero Section */}
-      <section className="pt-32 pb-20 px-6">
+      <section className="pt-24 md:pt-32 pb-12 md:pb-20 px-4 md:px-6">
         <div className="max-w-7xl mx-auto text-center">
-          <div className="inline-flex items-center gap-2 px-4 py-2 bg-primary/10 text-primary rounded-full text-sm font-medium mb-6">
-            <Zap size={16} />
-            Bases de datos en la nube en segundos
+          <div className="inline-flex items-center gap-2 px-3 md:px-4 py-1.5 md:py-2 bg-primary/10 text-primary rounded-full text-xs md:text-sm font-medium mb-4 md:mb-6">
+            <Zap size={14} md:size={16} />
+            <span>Bases de datos en la nube en segundos</span>
           </div>
-          <h1 className="text-6xl md:text-7xl font-bold text-text dark:text-white mb-6 leading-tight">
+          <h1 className="text-4xl sm:text-5xl md:text-6xl lg:text-7xl font-bold text-text dark:text-white mb-4 md:mb-6 leading-tight px-4">
             Gestiona tus bases de datos
             <br />
             <span className="text-primary">sin complicaciones</span>
           </h1>
-          <p className="text-xl text-slate-600 dark:text-slate-400 mb-10 max-w-2xl mx-auto">
+          <p className="text-base sm:text-lg md:text-xl text-slate-600 dark:text-slate-400 mb-8 md:mb-10 max-w-2xl mx-auto px-4">
             Crea, administra y escala instancias de bases de datos en contenedores Docker.
             MySQL, PostgreSQL, MongoDB, Redis y más.
           </p>
-          <div className="flex items-center justify-center gap-4">
+          <div className="flex flex-col sm:flex-row items-center justify-center gap-3 md:gap-4 px-4">
             <button
               onClick={() => navigate('/login')}
-              className="px-8 py-4 bg-primary text-white rounded-lg font-medium hover:bg-primary/90 transition-colors flex items-center gap-2 text-lg"
+              className="w-full sm:w-auto px-6 md:px-8 py-3 md:py-4 bg-primary text-white rounded-lg font-medium hover:bg-primary/90 transition-colors flex items-center justify-center gap-2 text-base md:text-lg"
             >
-              Comenzar ahora
-              <ArrowRight size={20} />
+              <span>Comenzar ahora</span>
+              <ArrowRight size={18} md:size={20} />
             </button>
-            <button className="px-8 py-4 border-2 border-border dark:border-slate-700 text-text dark:text-white rounded-lg font-medium hover:bg-slate-50 dark:hover:bg-slate-800 transition-colors text-lg">
+            <button className="w-full sm:w-auto px-6 md:px-8 py-3 md:py-4 border-2 border-border dark:border-slate-700 text-text dark:text-white rounded-lg font-medium hover:bg-slate-50 dark:hover:bg-slate-800 transition-colors text-base md:text-lg">
               Ver documentación
             </button>
           </div>

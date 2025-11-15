@@ -46,19 +46,21 @@ const MiPlan = () => {
   ]
 
   return (
-    <div className="space-y-8">
+    <div className="space-y-6 md:space-y-8">
+      {/* Header */}
       <div>
-        <h1 className="text-3xl font-semibold text-text dark:text-white mb-2">Mi plan</h1>
-        <p className="text-slate-500 dark:text-slate-400">
+        <h1 className="text-2xl md:text-3xl font-semibold text-text dark:text-white mb-2">Mi plan</h1>
+        <p className="text-sm md:text-base text-slate-500 dark:text-slate-400">
           Plan actual: <span className="font-medium text-text dark:text-white">{user?.plan}</span>
         </p>
       </div>
 
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+      {/* Grid de planes */}
+      <div className="grid grid-cols-1 lg:grid-cols-3 gap-4 md:gap-6">
         {planes.map((plan) => (
           <div
             key={plan.name}
-            className={`bg-white dark:bg-slate-900 rounded-xl border-2 p-8 relative ${
+            className={`bg-white dark:bg-slate-900 rounded-xl border-2 p-6 md:p-8 relative ${
               plan.popular ? 'border-primary' : 'border-border dark:border-slate-700'
             }`}
           >
@@ -71,34 +73,34 @@ const MiPlan = () => {
             )}
 
             <div className="text-center mb-6">
-              <h3 className="text-2xl font-semibold text-text dark:text-white mb-2">{plan.name}</h3>
+              <h3 className="text-xl md:text-2xl font-semibold text-text dark:text-white mb-2">{plan.name}</h3>
               <div className="flex items-baseline justify-center gap-1">
-                <span className="text-4xl font-bold text-text dark:text-white">{plan.price}</span>
-                <span className="text-slate-500 dark:text-slate-400">/mes</span>
+                <span className="text-3xl md:text-4xl font-bold text-text dark:text-white">{plan.price}</span>
+                <span className="text-sm md:text-base text-slate-500 dark:text-slate-400">/mes</span>
               </div>
             </div>
 
             <div className="mb-6">
-              <p className="text-center text-sm font-medium text-text dark:text-white mb-4">
+              <p className="text-center text-xs md:text-sm font-medium text-text dark:text-white mb-4">
                 Hasta {plan.instancias} instancias
               </p>
             </div>
 
-            <ul className="space-y-3 mb-8">
+            <ul className="space-y-3 mb-6 md:mb-8">
               {plan.features.map((feature) => (
                 <li key={feature} className="flex items-start gap-3">
                   <div className="w-5 h-5 rounded-full bg-success/10 flex items-center justify-center flex-shrink-0 mt-0.5">
                     <Check size={14} className="text-success" />
                   </div>
-                  <span className="text-sm text-slate-600 dark:text-slate-300">{feature}</span>
+                  <span className="text-xs md:text-sm text-slate-600 dark:text-slate-300">{feature}</span>
                 </li>
               ))}
             </ul>
 
             <button
-              className={`w-full py-3 rounded-lg font-medium transition-colors ${
+              className={`w-full py-2.5 md:py-3 rounded-lg font-medium text-sm transition-colors ${
                 user?.plan === plan.name.toUpperCase()
-                  ? 'bg-slate-100 text-slate-400 cursor-not-allowed'
+                  ? 'bg-slate-100 dark:bg-slate-700 text-slate-400 dark:text-slate-500 cursor-not-allowed'
                   : plan.popular
                   ? 'bg-primary text-white hover:bg-primary/90'
                   : 'border-2 border-border dark:border-slate-700 text-text dark:text-white hover:bg-slate-50 dark:hover:bg-slate-800'
@@ -111,9 +113,10 @@ const MiPlan = () => {
         ))}
       </div>
 
-      <div className="bg-white dark:bg-slate-900 rounded-xl border border-border dark:border-slate-700 p-6">
-        <h2 className="text-lg font-semibold text-text dark:text-white mb-4">Historial de pagos</h2>
-        <div className="text-sm text-slate-500 dark:text-slate-400">No hay transacciones registradas</div>
+      {/* Historial de pagos */}
+      <div className="bg-white dark:bg-slate-900 rounded-xl border border-border dark:border-slate-700 p-4 md:p-6">
+        <h2 className="text-base md:text-lg font-semibold text-text dark:text-white mb-4">Historial de pagos</h2>
+        <div className="text-xs md:text-sm text-slate-500 dark:text-slate-400">No hay transacciones registradas</div>
       </div>
     </div>
   )

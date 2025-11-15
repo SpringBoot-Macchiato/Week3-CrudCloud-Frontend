@@ -21,17 +21,19 @@ const Motores = () => {
   }
 
   return (
-    <div className="space-y-8">
+    <div className="space-y-6 md:space-y-8">
+      {/* Header */}
       <div>
-        <h1 className="text-3xl font-semibold text-text dark:text-white mb-2">Motores disponibles</h1>
-        <p className="text-slate-500 dark:text-slate-400">Selecciona un motor de base de datos para crear una instancia</p>
+        <h1 className="text-2xl md:text-3xl font-semibold text-text dark:text-white mb-2">Motores disponibles</h1>
+        <p className="text-sm md:text-base text-slate-500 dark:text-slate-400">Selecciona un motor de base de datos para crear una instancia</p>
       </div>
 
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+      {/* Grid de motores */}
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 md:gap-6">
         {motores.map((motor) => (
           <div
             key={motor.id}
-            className="bg-white dark:bg-slate-900 rounded-xl border border-border dark:border-slate-700 p-6 hover:shadow-sm transition-all group"
+            className="bg-white dark:bg-slate-900 rounded-xl border border-border dark:border-slate-700 p-4 md:p-6 hover:shadow-sm transition-all group"
           >
             <div className="flex items-start justify-between mb-4">
               <div className="w-12 h-12 rounded-xl bg-slate-50 dark:bg-slate-800 flex items-center justify-center text-2xl">
@@ -41,23 +43,23 @@ const Motores = () => {
                 className={`px-3 py-1 rounded-full text-xs font-medium ${
                   motor.status === 'Disponible'
                     ? 'bg-success/10 text-success'
-                    : 'bg-slate-100 text-slate-600'
+                    : 'bg-slate-100 dark:bg-slate-700 text-slate-600 dark:text-slate-300'
                 }`}
               >
                 {motor.status}
               </span>
             </div>
 
-            <h3 className="text-lg font-semibold text-text dark:text-white mb-1">{motor.name}</h3>
-            <p className="text-sm text-slate-500 dark:text-slate-400 mb-6">Versión {motor.version}</p>
+            <h3 className="text-base md:text-lg font-semibold text-text dark:text-white mb-1">{motor.name}</h3>
+            <p className="text-xs md:text-sm text-slate-500 dark:text-slate-400 mb-4 md:mb-6">Versión {motor.version}</p>
 
             <button
               onClick={() => handleCreateInstance(motor)}
               disabled={motor.status !== 'Disponible'}
-              className={`w-full py-2.5 rounded-lg font-medium transition-colors ${
+              className={`w-full py-2.5 rounded-lg font-medium text-sm transition-colors ${
                 motor.status === 'Disponible'
                   ? 'bg-primary text-white hover:bg-primary/90'
-                  : 'bg-slate-100 text-slate-400 cursor-not-allowed'
+                  : 'bg-slate-100 dark:bg-slate-700 text-slate-400 dark:text-slate-500 cursor-not-allowed'
               }`}
             >
               Crear instancia
