@@ -1,8 +1,11 @@
-import { Check } from 'lucide-react'
+import { useState } from 'react'
+import { Check, Loader2 } from 'lucide-react'
 import { useAuth } from '../contexts/AuthContext'
+import { api } from '../utils/api'
 
 const MiPlan = () => {
   const { user } = useAuth()
+  const [loadingPlan, setLoadingPlan] = useState(null)
 
   const planes = [
     {
@@ -45,6 +48,86 @@ const MiPlan = () => {
     },
   ]
 
+  const isCurrentPlan = (planName) => {
+    return user?.plan === planName.toUpperCase()
+  }
+
+  const getButtonText = (planName) => {
+    if (isCurrentPlan(planName)) {
+      return 'Plan actual'
+    }
+    return `Cambiar a ${planName}`
+  }
+
+  const handlePlanChange = async (planName) => {
+    if (isCurrentPlan(planName)) return
+
+    setLoadingPlan(planName)
+
+    try {
+      // Si es plan Free, no requiere pago
+      if (planName === 'Free') {
+        // TODO: Llamar al backend para cambiar a plan Free
+        alert('Cambiando a plan Free...')
+        setLoadingPlan(null)
+        return
+      }
+
+      // Verificar si el backend está disponible
+      const DEMO_MODE = import.meta.env.VITE_DEMO_MODE === 'true' || false
+
+      if (DEMO_MODE) {
+        // Modo demo: simular flujo de pago
+        console.log('Modo demo activado - Simulando flujo de Mercado Pago')
+
+        // Simular delay de procesamiento
+        await new Promise(resolve => setTimeout(resolve, 1500))
+
+        // Simular diferentes escenarios (80% éxito, 10% pendiente, 10% fallo)
+        const random = Math.random()
+        if (random < 0.8) {
+          // Éxito
+          window.location.href = `/payment/success?payment_id=DEMO-${Date.now()}&status=approved&external_reference=${planName}`
+        } else if (random < 0.9) {
+          // Pendiente
+          window.location.href = `/payment/pending?payment_id=DEMO-${Date.now()}&status=pending&external_reference=${planName}`
+        } else {
+          // Fallo
+          window.location.href = `/payment/failure?payment_id=DEMO-${Date.now()}&status=rejected&external_reference=${planName}`
+        }
+        return
+      }
+
+      // Modo producción: llamar al backend
+      const response = await api.post('/payments/create-preference', {
+        plan: planName.toUpperCase(),
+        userId: user?.email || 'demo@email.com'
+      })
+
+      // Mercado Pago devuelve una URL de pago (init_point)
+      if (response.init_point) {
+        // Redirigir a Mercado Pago
+        window.location.href = response.init_point
+      } else {
+        throw new Error('No se recibió URL de pago')
+      }
+    } catch (error) {
+      console.error('Error al procesar el pago:', error)
+
+      // Mensaje más específico dependiendo del error
+      let errorMessage = 'Hubo un error al procesar tu solicitud.'
+
+      if (error.message.includes('Failed to fetch') || error.message.includes('NetworkError')) {
+        errorMessage = 'No se pudo conectar con el servidor. Verifica que el backend esté corriendo.\n\nPara probar el flujo en modo demo, agrega VITE_DEMO_MODE=true en tu archivo .env'
+      } else if (error.message.includes('HTTP error! status: 404')) {
+        errorMessage = 'El endpoint de pagos no está implementado en el backend.\n\nPara probar el flujo en modo demo, agrega VITE_DEMO_MODE=true en tu archivo .env'
+      }
+
+      alert(errorMessage)
+      setLoadingPlan(null)
+    }
+  }
+
   return (
     <div className="space-y-8">
       <div>
@@ -59,10 +142,21 @@ const MiPlan = () => {
           <div
             key={plan.name}
             className={`bg-white dark:bg-slate-900 rounded-xl border-2 p-8 relative ${
-              plan.popular ? 'border-primary' : 'border-border dark:border-slate-700'
+              isCurrentPlan(plan.name)
+                ? 'border-success'
+                : plan.popular
+                ? 'border-primary'
+                : 'border-border dark:border-slate-700'
             }`}
           >
-            {plan.popular && (
+            {isCurrentPlan(plan.name) && (
+              <div className="absolute -top-3 left-1/2 -translate-x-1/2">
+                <span className="bg-success text-white px-4 py-1 rounded-full text-xs font-medium">
+                  Plan activo
+                </span>
+              </div>
+            )}
+            {plan.popular && !isCurrentPlan(plan.name) && (
               <div className="absolute -top-3 left-1/2 -translate-x-1/2">
                 <span className="bg-primary text-white px-4 py-1 rounded-full text-xs font-medium">
                   Más popular
@@ -96,16 +190,24 @@ const MiPlan = () => {
             </ul>
 
             <button
-              className={`w-full py-3 rounded-lg font-medium transition-colors ${
-                user?.plan === plan.name.toUpperCase()
-                  ? 'bg-slate-100 text-slate-400 cursor-not-allowed'
+              onClick={() => handlePlanChange(plan.name)}
+              className={`w-full py-3 rounded-lg font-medium transition-colors flex items-center justify-center gap-2 ${
+                isCurrentPlan(plan.name)
+                  ? 'bg-slate-100 dark:bg-slate-800 text-slate-400 dark:text-slate-500 cursor-not-allowed'
                   : plan.popular
                   ? 'bg-primary text-white hover:bg-primary/90'
                   : 'border-2 border-border dark:border-slate-700 text-text dark:text-white hover:bg-slate-50 dark:hover:bg-slate-800'
               }`}
-              disabled={user?.plan === plan.name.toUpperCase()}
+              disabled={isCurrentPlan(plan.name) || loadingPlan !== null}
             >
-              {user?.plan === plan.name.toUpperCase() ? 'Plan actual' : 'Actualizar plan'}
+              {loadingPlan === plan.name ? (
+                <>
+                  <Loader2 size={18} className="animate-spin" />
+                  Procesando...
+                </>
+              ) : (
+                getButtonText(plan.name)
+              )}
             </button>
           </div>
         ))}
