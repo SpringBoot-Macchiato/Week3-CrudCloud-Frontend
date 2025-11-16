@@ -73,7 +73,32 @@ const MiPlan = () => {
         return
       }
 
-      // Para planes pagos, crear preferencia de Mercado Pago
+      // Verificar si el backend está disponible
+      const DEMO_MODE = import.meta.env.VITE_DEMO_MODE === 'true' || false
+
+      if (DEMO_MODE) {
+        // Modo demo: simular flujo de pago
+        console.log('Modo demo activado - Simulando flujo de Mercado Pago')
+
+        // Simular delay de procesamiento
+        await new Promise(resolve => setTimeout(resolve, 1500))
+
+        // Simular diferentes escenarios (80% éxito, 10% pendiente, 10% fallo)
+        const random = Math.random()
+        if (random < 0.8) {
+          // Éxito
+          window.location.href = `/payment/success?payment_id=DEMO-${Date.now()}&status=approved&external_reference=${planName}`
+        } else if (random < 0.9) {
+          // Pendiente
+          window.location.href = `/payment/pending?payment_id=DEMO-${Date.now()}&status=pending&external_reference=${planName}`
+        } else {
+          // Fallo
+          window.location.href = `/payment/failure?payment_id=DEMO-${Date.now()}&status=rejected&external_reference=${planName}`
+        }
+        return
+      }
+
+      // Modo producción: llamar al backend
       const response = await api.post('/payments/create-preference', {
         plan: planName.toUpperCase(),
         userId: user?.email || 'demo@email.com'
@@ -88,7 +113,17 @@ const MiPlan = () => {
       }
     } catch (error) {
       console.error('Error al procesar el pago:', error)
-      alert('Hubo un error al procesar tu solicitud. Por favor intenta nuevamente.')
+
+      // Mensaje más específico dependiendo del error
+      let errorMessage = 'Hubo un error al procesar tu solicitud.'
+
+      if (error.message.includes('Failed to fetch') || error.message.includes('NetworkError')) {
+        errorMessage = 'No se pudo conectar con el servidor. Verifica que el backend esté corriendo.\n\nPara probar el flujo en modo demo, agrega VITE_DEMO_MODE=true en tu archivo .env'
+      } else if (error.message.includes('HTTP error! status: 404')) {
+        errorMessage = 'El endpoint de pagos no está implementado en el backend.\n\nPara probar el flujo en modo demo, agrega VITE_DEMO_MODE=true en tu archivo .env'
+      }
+
+      alert(errorMessage)
       setLoadingPlan(null)
     }
   }
