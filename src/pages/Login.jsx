@@ -1,18 +1,34 @@
 import { useState } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { useAuth } from '../contexts/AuthContext'
-import { Database } from 'lucide-react'
+import { Database, Loader2, AlertCircle } from 'lucide-react'
 
 const Login = () => {
   const [email, setEmail] = useState('')
   const [password, setPassword] = useState('')
+  const [loading, setLoading] = useState(false)
+  const [error, setError] = useState('')
   const { login } = useAuth()
   const navigate = useNavigate()
 
-  const handleSubmit = (e) => {
+  const handleSubmit = async (e) => {
     e.preventDefault()
-    login(email, password)
-    navigate('/app/dashboard')
+    setError('')
+    setLoading(true)
+
+    try {
+      const result = await login(email, password)
+
+      if (result.success) {
+        navigate('/app/dashboard')
+      } else {
+        setError(result.error || 'Credenciales inválidas')
+      }
+    } catch (err) {
+      setError('Error al conectar con el servidor')
+    } finally {
+      setLoading(false)
+    }
   }
 
   return (
@@ -30,6 +46,13 @@ const Login = () => {
           </h2>
 
           <form onSubmit={handleSubmit} className="space-y-5">
+            {error && (
+              <div className="bg-red-50 border border-red-200 text-red-700 px-4 py-3 rounded-lg flex items-center gap-2">
+                <AlertCircle size={18} />
+                <span className="text-sm">{error}</span>
+              </div>
+            )}
+
             <div>
               <label className="block text-sm font-medium text-text mb-2">
                 Email
@@ -41,6 +64,7 @@ const Login = () => {
                 className="w-full px-4 py-3 border border-border rounded-lg focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary transition-all"
                 placeholder="tu@email.com"
                 required
+                disabled={loading}
               />
             </div>
 
@@ -55,14 +79,23 @@ const Login = () => {
                 className="w-full px-4 py-3 border border-border rounded-lg focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary transition-all"
                 placeholder="••••••••"
                 required
+                disabled={loading}
               />
             </div>
 
             <button
               type="submit"
-              className="w-full bg-primary text-white py-3 rounded-lg font-medium hover:bg-primary/90 transition-colors"
+              className="w-full bg-primary text-white py-3 rounded-lg font-medium hover:bg-primary/90 transition-colors flex items-center justify-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed"
+              disabled={loading}
             >
-              Continuar
+              {loading ? (
+                <>
+                  <Loader2 size={18} className="animate-spin" />
+                  Iniciando sesión...
+                </>
+              ) : (
+                'Continuar'
+              )}
             </button>
           </form>
 
