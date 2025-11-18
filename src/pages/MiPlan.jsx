@@ -1,4 +1,4 @@
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import { Check, Loader2 } from 'lucide-react'
 import { useAuth } from '../contexts/AuthContext'
 import { api } from '../utils/api'
@@ -6,11 +6,24 @@ import { api } from '../utils/api'
 const MiPlan = () => {
   const { user } = useAuth()
   const [loadingPlan, setLoadingPlan] = useState(null)
+  const [mp, setMp] = useState(null)
+
+  // Inicializar Mercado Pago SDK
+  useEffect(() => {
+    const publicKey = import.meta.env.VITE_MERCADOPAGO_PUBLIC_KEY
+    if (window.MercadoPago && publicKey) {
+      const mercadopago = new window.MercadoPago(publicKey, {
+        locale: 'es-CO'
+      })
+      setMp(mercadopago)
+    }
+  }, [])
 
   const planes = [
     {
       name: 'Free',
       price: '$0',
+      planId: null, // Free no tiene planId porque es gratuito
       instancias: 2,
       features: [
         'Hasta 2 instancias',
@@ -21,7 +34,8 @@ const MiPlan = () => {
     },
     {
       name: 'Standard',
-      price: '$29',
+      price: '$1,000 COP',
+      planId: 1, // Standard = planId 1
       instancias: 5,
       features: [
         'Hasta 5 instancias',
@@ -34,7 +48,8 @@ const MiPlan = () => {
     },
     {
       name: 'Premium',
-      price: '$79',
+      price: '$2,000 COP',
+      planId: 2, // Premium = planId 2
       instancias: 10,
       features: [
         'Hasta 10 instancias',
@@ -59,16 +74,28 @@ const MiPlan = () => {
     return `Cambiar a ${planName}`
   }
 
-  const handlePlanChange = async (planName) => {
-    if (isCurrentPlan(planName)) return
+  const handlePlanChange = async (plan) => {
+    if (isCurrentPlan(plan.name)) return
 
-    setLoadingPlan(planName)
+    setLoadingPlan(plan.name)
 
     try {
       // Si es plan Free, no requiere pago
-      if (planName === 'Free') {
-        // TODO: Llamar al backend para cambiar a plan Free
-        alert('Cambiando a plan Free...')
+      if (plan.name === 'Free' || !plan.planId) {
+        alert('El plan Free no requiere pago. Funcionalidad de cambio a Free pendiente de implementar.')
+        setLoadingPlan(null)
+        return
+      }
+
+      // Verificar que el SDK de MercadoPago esté cargado
+      if (!mp) {
+        throw new Error('SDK de Mercado Pago no está cargado. Recarga la página.')
+      }
+
+      // Verificar si hay token de autenticación
+      const token = localStorage.getItem('token')
+      if (!token) {
+        alert('Debes iniciar sesión para cambiar de plan')
         setLoadingPlan(null)
         return
       }
@@ -79,48 +106,62 @@ const MiPlan = () => {
       if (DEMO_MODE) {
         // Modo demo: simular flujo de pago
         console.log('Modo demo activado - Simulando flujo de Mercado Pago')
-
-        // Simular delay de procesamiento
         await new Promise(resolve => setTimeout(resolve, 1500))
 
-        // Simular diferentes escenarios (80% éxito, 10% pendiente, 10% fallo)
         const random = Math.random()
         if (random < 0.8) {
-          // Éxito
-          window.location.href = `/payment/success?payment_id=DEMO-${Date.now()}&status=approved&external_reference=${planName}`
+          window.location.href = `/payment/success?payment_id=DEMO-${Date.now()}&status=approved&external_reference=${plan.name}`
         } else if (random < 0.9) {
-          // Pendiente
-          window.location.href = `/payment/pending?payment_id=DEMO-${Date.now()}&status=pending&external_reference=${planName}`
+          window.location.href = `/payment/pending?payment_id=DEMO-${Date.now()}&status=pending&external_reference=${plan.name}`
         } else {
-          // Fallo
-          window.location.href = `/payment/failure?payment_id=DEMO-${Date.now()}&status=rejected&external_reference=${planName}`
+          window.location.href = `/payment/failure?payment_id=DEMO-${Date.now()}&status=rejected&external_reference=${plan.name}`
         }
         return
       }
 
-      // Modo producción: llamar al backend
-      const response = await api.post('/payments/create-preference', {
-        plan: planName.toUpperCase(),
-        userId: user?.email || 'demo@email.com'
+      // Modo producción: llamar al backend para crear la preferencia
+      const response = await fetch(`${import.meta.env.VITE_API_URL}/payments/create/plan`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${token}`
+        },
+        body: JSON.stringify({ planId: plan.planId })
       })
 
-      // Mercado Pago devuelve una URL de pago (init_point)
-      if (response.init_point) {
-        // Redirigir a Mercado Pago
-        window.location.href = response.init_point
-      } else {
-        throw new Error('No se recibió URL de pago')
+      if (!response.ok) {
+        const errorData = await response.json().catch(() => ({}))
+        throw new Error(errorData.error || `Error HTTP: ${response.status}`)
       }
+
+      const data = await response.json()
+
+      if (!data.preferenceId) {
+        throw new Error('No se recibió preferenceId del backend')
+      }
+
+      // Abrir el checkout de Mercado Pago como modal
+      mp.checkout({
+        preference: {
+          id: data.preferenceId
+        },
+        autoOpen: true
+      })
+
+      // Limpiar loading después de abrir el modal
+      setLoadingPlan(null)
+
     } catch (error) {
       console.error('Error al procesar el pago:', error)
 
-      // Mensaje más específico dependiendo del error
       let errorMessage = 'Hubo un error al procesar tu solicitud.'
 
       if (error.message.includes('Failed to fetch') || error.message.includes('NetworkError')) {
         errorMessage = 'No se pudo conectar con el servidor. Verifica que el backend esté corriendo.\n\nPara probar el flujo en modo demo, agrega VITE_DEMO_MODE=true en tu archivo .env'
-      } else if (error.message.includes('HTTP error! status: 404')) {
-        errorMessage = 'El endpoint de pagos no está implementado en el backend.\n\nPara probar el flujo en modo demo, agrega VITE_DEMO_MODE=true en tu archivo .env'
+      } else if (error.message.includes('SDK de Mercado Pago')) {
+        errorMessage = error.message
+      } else {
+        errorMessage = `Error: ${error.message}`
       }
 
       alert(errorMessage)
@@ -192,7 +233,7 @@ const MiPlan = () => {
             </ul>
 
             <button
-              onClick={() => handlePlanChange(plan.name)}
+              onClick={() => handlePlanChange(plan)}
               className={`w-full py-2.5 md:py-3 rounded-lg font-medium text-sm md:text-base transition-colors flex items-center justify-center gap-2 ${
                 isCurrentPlan(plan.name)
                   ? 'bg-slate-100 dark:bg-slate-800 text-slate-400 dark:text-slate-500 cursor-not-allowed'
