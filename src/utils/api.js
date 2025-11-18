@@ -5,7 +5,19 @@ const handleResponse = async (response) => {
     const error = await response.json().catch(() => ({ message: 'Error en la respuesta del servidor' }))
     throw new Error(error.message || `HTTP error! status: ${response.status}`)
   }
-  return response.json()
+
+  // Handle 204 No Content responses
+  if (response.status === 204) {
+    return null
+  }
+
+  // Handle responses without content
+  const contentType = response.headers.get('content-type')
+  if (contentType && contentType.includes('application/json')) {
+    return response.json()
+  }
+
+  return response.text()
 }
 
 export const api = {
@@ -68,6 +80,23 @@ export const api = {
       return await handleResponse(response)
     } catch (error) {
       console.error('API DELETE Error:', error)
+      throw error
+    }
+  },
+
+  async patch(endpoint, data) {
+    try {
+      const response = await fetch(`${API_URL}${endpoint}`, {
+        method: 'PATCH',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${localStorage.getItem('token')}`,
+        },
+        body: JSON.stringify(data),
+      })
+      return await handleResponse(response)
+    } catch (error) {
+      console.error('API PATCH Error:', error)
       throw error
     }
   },
