@@ -1,4 +1,5 @@
 import { createContext, useContext, useState, useEffect } from 'react'
+import { api } from '../utils/api'
 
 const AuthContext = createContext()
 
@@ -32,14 +33,48 @@ export const AuthProvider = ({ children }) => {
     localStorage.setItem('user', JSON.stringify(mockUser))
   }
 
+  const googleLogin = async (credentialToken) => {
+    try {
+      const response = await api.post('/auth/google/login', {
+        credential: credentialToken
+      })
+
+      const { token, email, role } = response
+
+      // Store JWT token
+      localStorage.setItem('token', token)
+
+      // Create user object
+      const googleUser = {
+        email,
+        name: email.split('@')[0],
+        role,
+        plan: 'FREE' // Default plan for new users
+      }
+
+      setUser(googleUser)
+      localStorage.setItem('user', JSON.stringify(googleUser))
+
+      return { success: true }
+    } catch (error) {
+      console.error('Error en Google login:', error)
+      return {
+        success: false,
+        error: error.message || 'Error al autenticar con Google'
+      }
+    }
+  }
+
   const logout = () => {
     setUser(null)
     localStorage.removeItem('user')
+    localStorage.removeItem('token')
   }
 
   const value = {
     user,
     login,
+    googleLogin,
     logout,
     loading
   }
