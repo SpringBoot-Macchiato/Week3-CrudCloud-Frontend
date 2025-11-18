@@ -1,23 +1,30 @@
 import { useState } from 'react'
-import { Database } from 'lucide-react'
+import { useNavigate } from 'react-router-dom'
 import ModalCrearInstancia from '../components/ModalCrearInstancia'
 
 const Motores = () => {
+  const navigate = useNavigate()
   const [showModal, setShowModal] = useState(false)
   const [selectedMotor, setSelectedMotor] = useState(null)
 
+  // Motores disponibles según el backend (engines table)
   const motores = [
     { id: 1, name: 'MySQL', version: '8.0', status: 'Disponible', icon: '🐬' },
     { id: 2, name: 'PostgreSQL', version: '15.0', status: 'Disponible', icon: '🐘' },
-    { id: 3, name: 'MongoDB', version: '7.0', status: 'Disponible', icon: '🍃' },
-    { id: 4, name: 'Redis', version: '7.2', status: 'Disponible', icon: '⚡' },
-    { id: 5, name: 'SQL Server', version: '2022', status: 'Próximamente', icon: '💼' },
+    { id: 3, name: 'SQLServer', version: '2022', status: 'Disponible', icon: '💼' },
+    { id: 4, name: 'MongoDB', version: '7.0', status: 'Próximamente', icon: '🍃' },
+    { id: 5, name: 'Redis', version: '7.2', status: 'Próximamente', icon: '⚡' },
     { id: 6, name: 'Cassandra', version: '4.1', status: 'Próximamente', icon: '🌌' },
   ]
 
   const handleCreateInstance = (motor) => {
     setSelectedMotor(motor)
     setShowModal(true)
+  }
+
+  const handleSuccessCreate = () => {
+    // Redirigir a la página de instancias después de crear
+    navigate('/app/instancias')
   }
 
   return (
@@ -72,6 +79,7 @@ const Motores = () => {
         <ModalCrearInstancia
           motor={selectedMotor}
           onClose={() => setShowModal(false)}
+          onSuccess={handleSuccessCreate}
         />
       )}
     </div>

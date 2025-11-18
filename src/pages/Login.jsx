@@ -7,15 +7,31 @@ import { Database, ArrowLeft, Loader2 } from 'lucide-react'
 const Login = () => {
   const [email, setEmail] = useState('')
   const [password, setPassword] = useState('')
+  const [loading, setLoading] = useState(false)
   const [googleLoading, setGoogleLoading] = useState(false)
   const [error, setError] = useState(null)
   const { login, googleLogin } = useAuth()
   const navigate = useNavigate()
 
-  const handleSubmit = (e) => {
+  const handleSubmit = async (e) => {
     e.preventDefault()
-    login(email, password)
-    navigate('/app/dashboard')
+    setLoading(true)
+    setError(null)
+
+    try {
+      const result = await login(email, password)
+      
+      if (result.success) {
+        navigate('/app/dashboard')
+      } else {
+        setError(result.error || 'Credenciales inválidas')
+      }
+    } catch (err) {
+      console.error('Error en login:', err)
+      setError('Credenciales inválidas')
+    } finally {
+      setLoading(false)
+    }
   }
 
   const handleGoogleLoginSuccess = async (tokenResponse) => {
@@ -23,8 +39,6 @@ const Login = () => {
     setError(null)
 
     try {
-      // The tokenResponse contains the access_token
-      // We need to send this to our backend
       const result = await googleLogin(tokenResponse.access_token)
 
       if (result.success) {
@@ -49,7 +63,7 @@ const Login = () => {
   const googleLoginHandler = useGoogleLogin({
     onSuccess: handleGoogleLoginSuccess,
     onError: handleGoogleLoginError,
-    flow: 'implicit', // Use implicit flow to get access_token directly
+    flow: 'implicit',
   })
 
   return (
@@ -92,7 +106,7 @@ const Login = () => {
           <button
             type="button"
             onClick={googleLoginHandler}
-            disabled={googleLoading}
+            disabled={googleLoading || loading}
             className="w-full flex items-center justify-center gap-3 px-4 py-2.5 md:py-3 border-2 border-border dark:border-slate-700 rounded-lg font-medium text-text dark:text-white hover:bg-slate-50 dark:hover:bg-slate-800 transition-colors mb-6 disabled:opacity-50 disabled:cursor-not-allowed"
           >
             {googleLoading ? (
@@ -138,6 +152,7 @@ const Login = () => {
                 className="w-full px-4 py-2.5 md:py-3 border border-border dark:border-slate-700 rounded-lg bg-white dark:bg-slate-800 text-text dark:text-white placeholder:text-slate-400 dark:placeholder:text-slate-500 focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary transition-all"
                 placeholder="tu@email.com"
                 required
+                disabled={loading || googleLoading}
               />
             </div>
 
@@ -152,14 +167,23 @@ const Login = () => {
                 className="w-full px-4 py-2.5 md:py-3 border border-border dark:border-slate-700 rounded-lg bg-white dark:bg-slate-800 text-text dark:text-white placeholder:text-slate-400 dark:placeholder:text-slate-500 focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary transition-all"
                 placeholder="••••••••"
                 required
+                disabled={loading || googleLoading}
               />
             </div>
 
             <button
               type="submit"
-              className="w-full bg-primary text-white py-2.5 md:py-3 rounded-lg font-medium hover:bg-primary/90 transition-colors text-sm md:text-base"
+              disabled={loading || googleLoading}
+              className="w-full bg-primary text-white py-2.5 md:py-3 rounded-lg font-medium hover:bg-primary/90 transition-colors text-sm md:text-base disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2"
             >
-              Continuar
+              {loading ? (
+                <>
+                  <Loader2 size={18} className="animate-spin" />
+                  <span>Iniciando sesión...</span>
+                </>
+              ) : (
+                'Continuar'
+              )}
             </button>
           </form>
 

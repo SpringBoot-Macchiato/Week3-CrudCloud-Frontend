@@ -11,6 +11,7 @@ const Register = () => {
     password: '',
     confirmPassword: ''
   })
+  const [loading, setLoading] = useState(false)
   const [googleLoading, setGoogleLoading] = useState(false)
   const [error, setError] = useState(null)
   const { register, googleLogin } = useAuth()
@@ -24,24 +25,39 @@ const Register = () => {
     }))
   }
 
-  const handleSubmit = (e) => {
+  const handleSubmit = async (e) => {
     e.preventDefault()
     setError(null)
+    setLoading(true)
 
     // Validaciones
     if (formData.password !== formData.confirmPassword) {
       setError('Las contraseñas no coinciden')
+      setLoading(false)
       return
     }
 
     if (formData.password.length < 6) {
       setError('La contraseña debe tener al menos 6 caracteres')
+      setLoading(false)
       return
     }
 
-    // Llamar al método de registro
-    register(formData.name, formData.email, formData.password)
-    navigate('/app/dashboard')
+    try {
+      // Llamar al método de registro
+      const result = await register(formData.name, formData.email, formData.password)
+      
+      if (result.success) {
+        navigate('/app/dashboard')
+      } else {
+        setError(result.error || 'Error al crear la cuenta')
+      }
+    } catch (err) {
+      console.error('Error en registro:', err)
+      setError('Error al crear la cuenta. Intenta de nuevo.')
+    } finally {
+      setLoading(false)
+    }
   }
 
   const handleGoogleLoginSuccess = async (tokenResponse) => {
@@ -116,7 +132,7 @@ const Register = () => {
           <button
             type="button"
             onClick={googleLoginHandler}
-            disabled={googleLoading}
+            disabled={googleLoading || loading}
             className="w-full flex items-center justify-center gap-3 px-4 py-2.5 md:py-3 border-2 border-border dark:border-slate-700 rounded-lg font-medium text-text dark:text-white hover:bg-slate-50 dark:hover:bg-slate-800 transition-colors mb-6 disabled:opacity-50 disabled:cursor-not-allowed"
           >
             {googleLoading ? (
@@ -163,6 +179,7 @@ const Register = () => {
                 className="w-full px-4 py-2.5 md:py-3 border border-border dark:border-slate-700 rounded-lg bg-white dark:bg-slate-800 text-text dark:text-white placeholder:text-slate-400 dark:placeholder:text-slate-500 focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary transition-all"
                 placeholder="Juan Pérez"
                 required
+                disabled={loading || googleLoading}
               />
             </div>
 
@@ -178,6 +195,7 @@ const Register = () => {
                 className="w-full px-4 py-2.5 md:py-3 border border-border dark:border-slate-700 rounded-lg bg-white dark:bg-slate-800 text-text dark:text-white placeholder:text-slate-400 dark:placeholder:text-slate-500 focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary transition-all"
                 placeholder="tu@email.com"
                 required
+                disabled={loading || googleLoading}
               />
             </div>
 
@@ -194,6 +212,7 @@ const Register = () => {
                 placeholder="••••••••"
                 required
                 minLength={6}
+                disabled={loading || googleLoading}
               />
             </div>
 
@@ -210,14 +229,23 @@ const Register = () => {
                 placeholder="••••••••"
                 required
                 minLength={6}
+                disabled={loading || googleLoading}
               />
             </div>
 
             <button
               type="submit"
-              className="w-full bg-primary text-white py-2.5 md:py-3 rounded-lg font-medium hover:bg-primary/90 transition-colors text-sm md:text-base"
+              disabled={loading || googleLoading}
+              className="w-full bg-primary text-white py-2.5 md:py-3 rounded-lg font-medium hover:bg-primary/90 transition-colors text-sm md:text-base disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2"
             >
-              Crear cuenta
+              {loading ? (
+                <>
+                  <Loader2 size={18} className="animate-spin" />
+                  <span>Creando cuenta...</span>
+                </>
+              ) : (
+                'Crear cuenta'
+              )}
             </button>
           </form>
 

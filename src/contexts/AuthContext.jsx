@@ -17,30 +17,78 @@ export const AuthProvider = ({ children }) => {
 
   useEffect(() => {
     const storedUser = localStorage.getItem('user')
-    if (storedUser) {
+    const token = localStorage.getItem('token')
+    if (storedUser && token) {
       setUser(JSON.parse(storedUser))
     }
     setLoading(false)
   }, [])
 
-  const login = (email, password) => {
-    const mockUser = {
-      email,
-      name: email.split('@')[0],
-      plan: 'FREE'
+  const login = async (email, password) => {
+    try {
+      const response = await api.post('/auth/login', { email, password })
+      
+      const { token, role } = response
+      
+      // Store JWT token
+      localStorage.setItem('token', token)
+      
+      // Create user object
+      const userObj = {
+        email,
+        name: email.split('@')[0],
+        role,
+        plan: 'FREE' // Default plan
+      }
+      
+      setUser(userObj)
+      localStorage.setItem('user', JSON.stringify(userObj))
+      
+      return { success: true }
+    } catch (error) {
+      console.error('Error en login:', error)
+      return {
+        success: false,
+        error: error.message === 'Password is incorrect' || error.message === 'User not found' 
+          ? 'Credenciales inválidas' 
+          : 'Error al iniciar sesión. Intenta de nuevo.'
+      }
     }
-    setUser(mockUser)
-    localStorage.setItem('user', JSON.stringify(mockUser))
   }
 
-  const register = (name, email, password) => {
-    const mockUser = {
-      email,
-      name,
-      plan: 'FREE'
+  const register = async (name, email, password) => {
+    try {
+      const response = await api.post('/users/register', {
+        email,
+        password,
+        fullName: name,
+        role: 'USER'
+      })
+
+      // Después del registro exitoso, hacer login automático
+      const loginResult = await login(email, password)
+      
+      if (loginResult.success) {
+        return { success: true }
+      } else {
+        return loginResult
+      }
+    } catch (error) {
+      console.error('Error en registro:', error)
+      
+      // Manejar errores específicos
+      if (error.message.includes('already registered')) {
+        return {
+          success: false,
+          error: 'Este correo ya está registrado'
+        }
+      }
+      
+      return {
+        success: false,
+        error: 'Error al crear la cuenta. Verifica tus datos e intenta de nuevo.'
+      }
     }
-    setUser(mockUser)
-    localStorage.setItem('user', JSON.stringify(mockUser))
   }
 
   const googleLogin = async (credentialToken) => {
@@ -59,7 +107,7 @@ export const AuthProvider = ({ children }) => {
         email,
         name: email.split('@')[0],
         role,
-        plan: 'FREE' // Default plan for new users
+        plan: 'FREE'
       }
 
       setUser(googleUser)
@@ -70,7 +118,7 @@ export const AuthProvider = ({ children }) => {
       console.error('Error en Google login:', error)
       return {
         success: false,
-        error: error.message || 'Error al autenticar con Google'
+        error: 'Error al autenticar con Google. Intenta de nuevo.'
       }
     }
   }

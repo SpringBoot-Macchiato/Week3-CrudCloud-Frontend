@@ -1,35 +1,98 @@
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { Eye, Pause, Play, Trash2, RotateCw, Plus } from 'lucide-react'
+import { api } from '../utils/api'
 
 const Instancias = () => {
   const navigate = useNavigate()
-  const [instancias, setInstancias] = useState([
-    {
-      id: 1,
-      motor: 'MySQL',
-      nombre: 'prod-mysql-01',
-      estado: 'RUNNING',
-      fecha: '2024-11-10',
-    },
-    {
-      id: 2,
-      motor: 'PostgreSQL',
-      nombre: 'dev-postgres-01',
-      estado: 'RUNNING',
-      fecha: '2024-11-09',
-    },
-    {
-      id: 3,
-      motor: 'Redis',
-      nombre: 'cache-redis-01',
-      estado: 'SUSPENDED',
-      fecha: '2024-11-08',
-    },
-  ])
+  const [instancias, setInstancias] = useState([])
+  const [loading, setLoading] = useState(true)
+  const [actionLoading, setActionLoading] = useState(null)
 
-  const handleAction = (action, id) => {
-    console.log(action, id)
+  useEffect(() => {
+    loadInstances()
+  }, [])
+
+  const loadInstances = async () => {
+    try {
+      setLoading(true)
+      const data = await api.get('/instances')
+      setInstancias(data)
+    } catch (error) {
+      console.error('Error cargando instancias:', error)
+      alert('Error al cargar las instancias')
+    } finally {
+      setLoading(false)
+    }
+  }
+
+  const handleAction = async (action, id) => {
+    if (actionLoading) return
+    
+    setActionLoading(`${action}-${id}`)
+    
+    try {
+      switch (action) {
+        case 'suspend':
+          await api.post(`/instances/${id}/suspend`)
+          alert('Instancia suspendida correctamente')
+          break
+        case 'resume':
+          await api.post(`/instances/${id}/resume`)
+          alert('Instancia reanudada correctamente')
+          break
+        case 'rotate':
+          const newPassword = await api.post(`/instances/${id}/rotate-password`)
+          alert(`Nueva contraseña: ${newPassword}\n\nGuárdala en un lugar seguro.`)
+          break
+        case 'delete':
+          if (window.confirm('¿Estás seguro de que deseas eliminar esta instancia? Esta acción no se puede deshacer.')) {
+            await api.delete(`/instances/${id}`)
+            alert('Instancia eliminada correctamente')
+          } else {
+            setActionLoading(null)
+            return
+          }
+          break
+        default:
+          break
+      }
+      
+      // Recargar lista de instancias
+      await loadInstances()
+    } catch (error) {
+      console.error(`Error en acción ${action}:`, error)
+      alert(`Error: ${error.message}`)
+    } finally {
+      setActionLoading(null)
+    }
+  }
+
+  const getEngineName = (engineId) => {
+    switch (engineId) {
+      case 1: return 'MySQL'
+      case 2: return 'PostgreSQL'
+      case 3: return 'SQL Server'
+      default: return 'Unknown'
+    }
+  }
+
+  const formatDate = (dateString) => {
+    if (!dateString) return '-'
+    const date = new Date(dateString)
+    return date.toLocaleDateString('es-ES', { 
+      year: 'numeric', 
+      month: '2-digit', 
+      day: '2-digit' 
+    })
+  }
+
+  if (loading) {
+    return (
+      <div className="flex items-center justify-center h-64">
+        <div className="w-8 h-8 border-4 border-primary border-t-transparent rounded-full animate-spin"></div>
+      </div>
+    )
   }
 
   return (
@@ -66,26 +129,28 @@ const Instancias = () => {
               {instancias.map((instancia) => (
                 <tr key={instancia.id} className="hover:bg-slate-50/50 dark:hover:bg-slate-800/50 transition-colors">
                   <td className="px-6 py-4">
-                    <span className="font-medium text-text dark:text-white">{instancia.motor}</span>
+                    <span className="font-medium text-text dark:text-white">{getEngineName(instancia.engineId)}</span>
                   </td>
                   <td className="px-6 py-4">
-                    <span className="text-slate-600 dark:text-slate-300">{instancia.nombre}</span>
+                    <span className="text-slate-600 dark:text-slate-300">{instancia.dbName}</span>
                   </td>
                   <td className="px-6 py-4">
                     <span
                       className={`px-3 py-1 rounded-full text-xs font-medium ${
-                        instancia.estado === 'RUNNING'
+                        instancia.state === 'RUNNING'
                           ? 'bg-success/10 text-success'
-                          : instancia.estado === 'CREATING'
+                          : instancia.state === 'CREATING'
                           ? 'bg-primary/10 text-primary'
-                          : 'bg-slate-100 dark:bg-slate-700 text-slate-600 dark:text-slate-300'
+                          : instancia.state === 'SUSPENDED'
+                          ? 'bg-slate-100 dark:bg-slate-700 text-slate-600 dark:text-slate-300'
+                          : 'bg-red-100 dark:bg-red-900/20 text-red-600 dark:text-red-400'
                       }`}
                     >
-                      {instancia.estado}
+                      {instancia.state}
                     </span>
                   </td>
                   <td className="px-6 py-4">
-                    <span className="text-slate-600 dark:text-slate-300">{instancia.fecha}</span>
+                    <span className="text-slate-600 dark:text-slate-300">{formatDate(instancia.createdAt)}</span>
                   </td>
                   <td className="px-6 py-4">
                     <div className="flex items-center justify-end gap-2">
@@ -96,33 +161,37 @@ const Instancias = () => {
                       >
                         <Eye size={18} className="text-slate-600 dark:text-slate-300" />
                       </button>
-                      {instancia.estado === 'RUNNING' ? (
+                      {instancia.state === 'RUNNING' ? (
                         <button
                           onClick={() => handleAction('suspend', instancia.id)}
-                          className="p-2 rounded-lg hover:bg-slate-100 dark:hover:bg-slate-700 transition-colors"
+                          disabled={actionLoading !== null}
+                          className="p-2 rounded-lg hover:bg-slate-100 dark:hover:bg-slate-700 transition-colors disabled:opacity-50"
                           title="Suspender"
                         >
                           <Pause size={18} className="text-slate-600 dark:text-slate-300" />
                         </button>
-                      ) : (
+                      ) : instancia.state === 'SUSPENDED' ? (
                         <button
                           onClick={() => handleAction('resume', instancia.id)}
-                          className="p-2 rounded-lg hover:bg-slate-100 dark:hover:bg-slate-700 transition-colors"
+                          disabled={actionLoading !== null}
+                          className="p-2 rounded-lg hover:bg-slate-100 dark:hover:bg-slate-700 transition-colors disabled:opacity-50"
                           title="Reanudar"
                         >
                           <Play size={18} className="text-slate-600 dark:text-slate-300" />
                         </button>
-                      )}
+                      ) : null}
                       <button
                         onClick={() => handleAction('rotate', instancia.id)}
-                        className="p-2 rounded-lg hover:bg-slate-100 dark:hover:bg-slate-700 transition-colors"
+                        disabled={actionLoading !== null}
+                        className="p-2 rounded-lg hover:bg-slate-100 dark:hover:bg-slate-700 transition-colors disabled:opacity-50"
                         title="Rotar contraseña"
                       >
                         <RotateCw size={18} className="text-slate-600 dark:text-slate-300" />
                       </button>
                       <button
                         onClick={() => handleAction('delete', instancia.id)}
-                        className="p-2 rounded-lg hover:bg-red-50 dark:hover:bg-red-900/20 transition-colors"
+                        disabled={actionLoading !== null}
+                        className="p-2 rounded-lg hover:bg-red-50 dark:hover:bg-red-900/20 transition-colors disabled:opacity-50"
                         title="Eliminar"
                       >
                         <Trash2 size={18} className="text-error" />
@@ -145,24 +214,26 @@ const Instancias = () => {
           >
             <div className="flex items-start justify-between mb-3">
               <div className="flex-1">
-                <h3 className="font-semibold text-text dark:text-white mb-1">{instancia.nombre}</h3>
-                <p className="text-sm text-slate-500 dark:text-slate-400">{instancia.motor}</p>
+                <h3 className="font-semibold text-text dark:text-white mb-1">{instancia.dbName}</h3>
+                <p className="text-sm text-slate-500 dark:text-slate-400">{getEngineName(instancia.engineId)}</p>
               </div>
               <span
                 className={`px-3 py-1 rounded-full text-xs font-medium whitespace-nowrap ${
-                  instancia.estado === 'RUNNING'
+                  instancia.state === 'RUNNING'
                     ? 'bg-success/10 text-success'
-                    : instancia.estado === 'CREATING'
+                    : instancia.state === 'CREATING'
                     ? 'bg-primary/10 text-primary'
-                    : 'bg-slate-100 dark:bg-slate-700 text-slate-600 dark:text-slate-300'
+                    : instancia.state === 'SUSPENDED'
+                    ? 'bg-slate-100 dark:bg-slate-700 text-slate-600 dark:text-slate-300'
+                    : 'bg-red-100 dark:bg-red-900/20 text-red-600 dark:text-red-400'
                 }`}
               >
-                {instancia.estado}
+                {instancia.state}
               </span>
             </div>
 
             <div className="text-sm text-slate-500 dark:text-slate-400 mb-4">
-              Creada: {instancia.fecha}
+              Creada: {formatDate(instancia.createdAt)}
             </div>
 
             <div className="flex items-center gap-2 pt-3 border-t border-border dark:border-slate-700">
@@ -173,33 +244,37 @@ const Instancias = () => {
                 <Eye size={18} />
                 <span>Ver detalles</span>
               </button>
-              {instancia.estado === 'RUNNING' ? (
+              {instancia.state === 'RUNNING' ? (
                 <button
                   onClick={() => handleAction('suspend', instancia.id)}
-                  className="p-2 rounded-lg hover:bg-slate-100 dark:hover:bg-slate-700 transition-colors"
+                  disabled={actionLoading !== null}
+                  className="p-2 rounded-lg hover:bg-slate-100 dark:hover:bg-slate-700 transition-colors disabled:opacity-50"
                   title="Suspender"
                 >
                   <Pause size={18} className="text-slate-600 dark:text-slate-300" />
                 </button>
-              ) : (
+              ) : instancia.state === 'SUSPENDED' ? (
                 <button
                   onClick={() => handleAction('resume', instancia.id)}
-                  className="p-2 rounded-lg hover:bg-slate-100 dark:hover:bg-slate-700 transition-colors"
+                  disabled={actionLoading !== null}
+                  className="p-2 rounded-lg hover:bg-slate-100 dark:hover:bg-slate-700 transition-colors disabled:opacity-50"
                   title="Reanudar"
                 >
                   <Play size={18} className="text-slate-600 dark:text-slate-300" />
                 </button>
-              )}
+              ) : null}
               <button
                 onClick={() => handleAction('rotate', instancia.id)}
-                className="p-2 rounded-lg hover:bg-slate-100 dark:hover:bg-slate-700 transition-colors"
+                disabled={actionLoading !== null}
+                className="p-2 rounded-lg hover:bg-slate-100 dark:hover:bg-slate-700 transition-colors disabled:opacity-50"
                 title="Rotar contraseña"
               >
                 <RotateCw size={18} className="text-slate-600 dark:text-slate-300" />
               </button>
               <button
                 onClick={() => handleAction('delete', instancia.id)}
-                className="p-2 rounded-lg hover:bg-red-50 dark:hover:bg-red-900/20 transition-colors"
+                disabled={actionLoading !== null}
+                className="p-2 rounded-lg hover:bg-red-50 dark:hover:bg-red-900/20 transition-colors disabled:opacity-50"
                 title="Eliminar"
               >
                 <Trash2 size={18} className="text-error" />
@@ -208,6 +283,20 @@ const Instancias = () => {
           </div>
         ))}
       </div>
+
+      {instancias.length === 0 && (
+        <div className="text-center py-12">
+          <p className="text-slate-500 dark:text-slate-400 mb-4">
+            No tienes instancias creadas aún
+          </p>
+          <button
+            onClick={() => navigate('/app/motores')}
+            className="px-6 py-2.5 bg-primary text-white rounded-lg font-medium hover:bg-primary/90 transition-colors"
+          >
+            Crear primera instancia
+          </button>
+        </div>
+      )}
     </div>
   )
 }

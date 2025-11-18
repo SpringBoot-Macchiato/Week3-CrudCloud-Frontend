@@ -1,21 +1,51 @@
 const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:8080/api'
 
 const handleResponse = async (response) => {
-  if (!response.ok) {
-    const error = await response.json().catch(() => ({ message: 'Error en la respuesta del servidor' }))
-    throw new Error(error.message || `HTTP error! status: ${response.status}`)
+  // Si la respuesta es exitosa
+  if (response.ok) {
+    const contentType = response.headers.get('content-type')
+    if (contentType && contentType.includes('application/json')) {
+      return response.json()
+    }
+    return response.text()
   }
-  return response.json()
+
+  // Si hay un error, intentar obtener el mensaje del servidor
+  let errorMessage = `Error ${response.status}`
+  
+  try {
+    const contentType = response.headers.get('content-type')
+    if (contentType && contentType.includes('application/json')) {
+      const errorData = await response.json()
+      errorMessage = errorData.error || errorData.message || errorMessage
+    } else {
+      const errorText = await response.text()
+      errorMessage = errorText || errorMessage
+    }
+  } catch (parseError) {
+    console.error('Error parsing error response:', parseError)
+  }
+
+  // Lanzar error con el mensaje apropiado
+  throw new Error(errorMessage)
 }
 
 export const api = {
   async get(endpoint) {
     try {
+      const token = localStorage.getItem('token')
+      const headers = {
+        'Content-Type': 'application/json',
+      }
+      
+      if (token) {
+        headers['Authorization'] = `Bearer ${token}`
+      }
+
       const response = await fetch(`${API_URL}${endpoint}`, {
-        headers: {
-          'Authorization': `Bearer ${localStorage.getItem('token')}`,
-        },
+        headers,
       })
+      
       return await handleResponse(response)
     } catch (error) {
       console.error('API GET Error:', error)
@@ -25,14 +55,21 @@ export const api = {
 
   async post(endpoint, data) {
     try {
+      const token = localStorage.getItem('token')
+      const headers = {
+        'Content-Type': 'application/json',
+      }
+      
+      if (token) {
+        headers['Authorization'] = `Bearer ${token}`
+      }
+
       const response = await fetch(`${API_URL}${endpoint}`, {
         method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          'Authorization': `Bearer ${localStorage.getItem('token')}`,
-        },
+        headers,
         body: JSON.stringify(data),
       })
+      
       return await handleResponse(response)
     } catch (error) {
       console.error('API POST Error:', error)
@@ -42,14 +79,21 @@ export const api = {
 
   async put(endpoint, data) {
     try {
+      const token = localStorage.getItem('token')
+      const headers = {
+        'Content-Type': 'application/json',
+      }
+      
+      if (token) {
+        headers['Authorization'] = `Bearer ${token}`
+      }
+
       const response = await fetch(`${API_URL}${endpoint}`, {
         method: 'PUT',
-        headers: {
-          'Content-Type': 'application/json',
-          'Authorization': `Bearer ${localStorage.getItem('token')}`,
-        },
+        headers,
         body: JSON.stringify(data),
       })
+      
       return await handleResponse(response)
     } catch (error) {
       console.error('API PUT Error:', error)
@@ -59,15 +103,47 @@ export const api = {
 
   async delete(endpoint) {
     try {
+      const token = localStorage.getItem('token')
+      const headers = {
+        'Content-Type': 'application/json',
+      }
+      
+      if (token) {
+        headers['Authorization'] = `Bearer ${token}`
+      }
+
       const response = await fetch(`${API_URL}${endpoint}`, {
         method: 'DELETE',
-        headers: {
-          'Authorization': `Bearer ${localStorage.getItem('token')}`,
-        },
+        headers,
       })
+      
       return await handleResponse(response)
     } catch (error) {
       console.error('API DELETE Error:', error)
+      throw error
+    }
+  },
+
+  async patch(endpoint, data) {
+    try {
+      const token = localStorage.getItem('token')
+      const headers = {
+        'Content-Type': 'application/json',
+      }
+      
+      if (token) {
+        headers['Authorization'] = `Bearer ${token}`
+      }
+
+      const response = await fetch(`${API_URL}${endpoint}`, {
+        method: 'PATCH',
+        headers,
+        body: JSON.stringify(data),
+      })
+      
+      return await handleResponse(response)
+    } catch (error) {
+      console.error('API PATCH Error:', error)
       throw error
     }
   },
