@@ -192,7 +192,10 @@ const Landing = () => {
               <span>Comenzar ahora</span>
               <ArrowRight size={18} md:size={20} />
             </button>
-            <button className="w-full sm:w-auto px-6 md:px-8 py-3 md:py-4 border-2 border-border dark:border-slate-700 text-text dark:text-white rounded-lg font-medium hover:bg-slate-50 dark:hover:bg-slate-800 transition-colors text-base md:text-lg">
+            <button
+              onClick={() => window.open('https://docs.macchiato.crudzaso.com/', '_blank', 'noopener,noreferrer')}
+              className="w-full sm:w-auto px-6 md:px-8 py-3 md:py-4 border-2 border-border dark:border-slate-700 text-text dark:text-white rounded-lg font-medium hover:bg-slate-50 dark:hover:bg-slate-800 transition-colors text-base md:text-lg"
+            >
               Ver documentación
             </button>
           </div>
@@ -385,7 +388,16 @@ const Landing = () => {
               <ul className="space-y-2 text-sm text-slate-600 dark:text-slate-400">
                 <li><a href="#features" className="hover:text-primary transition-colors">Features</a></li>
                 <li><a href="#pricing" className="hover:text-primary transition-colors">Pricing</a></li>
-                <li><a href="#" className="hover:text-primary transition-colors">Documentación</a></li>
+                <li>
+                  <a
+                    href="https://docs.macchiato.crudzaso.com/"
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="hover:text-primary transition-colors"
+                  >
+                    Documentación
+                  </a>
+                </li>
               </ul>
             </div>
             <div>
