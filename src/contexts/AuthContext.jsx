@@ -33,6 +33,16 @@ export const AuthProvider = ({ children }) => {
     localStorage.setItem('user', JSON.stringify(mockUser))
   }
 
+  const register = (name, email, password) => {
+    const mockUser = {
+      email,
+      name,
+      plan: 'FREE'
+    }
+    setUser(mockUser)
+    localStorage.setItem('user', JSON.stringify(mockUser))
+  }
+
   const googleLogin = async (credentialToken) => {
     try {
       const response = await api.post('/auth/google/login', {
@@ -74,6 +84,7 @@ export const AuthProvider = ({ children }) => {
   const value = {
     user,
     login,
+    register,
     googleLogin,
     logout,
     loading

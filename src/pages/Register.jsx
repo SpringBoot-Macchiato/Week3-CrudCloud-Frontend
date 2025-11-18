@@ -4,17 +4,43 @@ import { useGoogleLogin } from '@react-oauth/google'
 import { useAuth } from '../contexts/AuthContext'
 import { Database, ArrowLeft, Loader2 } from 'lucide-react'
 
-const Login = () => {
-  const [email, setEmail] = useState('')
-  const [password, setPassword] = useState('')
+const Register = () => {
+  const [formData, setFormData] = useState({
+    name: '',
+    email: '',
+    password: '',
+    confirmPassword: ''
+  })
   const [googleLoading, setGoogleLoading] = useState(false)
   const [error, setError] = useState(null)
-  const { login, googleLogin } = useAuth()
+  const { register, googleLogin } = useAuth()
   const navigate = useNavigate()
+
+  const handleInputChange = (e) => {
+    const { name, value } = e.target
+    setFormData(prev => ({
+      ...prev,
+      [name]: value
+    }))
+  }
 
   const handleSubmit = (e) => {
     e.preventDefault()
-    login(email, password)
+    setError(null)
+
+    // Validaciones
+    if (formData.password !== formData.confirmPassword) {
+      setError('Las contraseñas no coinciden')
+      return
+    }
+
+    if (formData.password.length < 6) {
+      setError('La contraseña debe tener al menos 6 caracteres')
+      return
+    }
+
+    // Llamar al método de registro
+    register(formData.name, formData.email, formData.password)
     navigate('/app/dashboard')
   }
 
@@ -23,8 +49,6 @@ const Login = () => {
     setError(null)
 
     try {
-      // The tokenResponse contains the access_token
-      // We need to send this to our backend
       const result = await googleLogin(tokenResponse.access_token)
 
       if (result.success) {
@@ -49,7 +73,7 @@ const Login = () => {
   const googleLoginHandler = useGoogleLogin({
     onSuccess: handleGoogleLoginSuccess,
     onError: handleGoogleLoginError,
-    flow: 'implicit', // Use implicit flow to get access_token directly
+    flow: 'implicit',
   })
 
   return (
@@ -78,7 +102,7 @@ const Login = () => {
 
           {/* Título */}
           <h2 className="text-xl md:text-2xl font-semibold text-text dark:text-white text-center mb-6 md:mb-8">
-            Iniciar sesión
+            Crear cuenta
           </h2>
 
           {/* Error message */}
@@ -129,12 +153,28 @@ const Login = () => {
           <form onSubmit={handleSubmit} className="space-y-4 md:space-y-5">
             <div>
               <label className="block text-sm font-medium text-text dark:text-white mb-2">
+                Nombre completo
+              </label>
+              <input
+                type="text"
+                name="name"
+                value={formData.name}
+                onChange={handleInputChange}
+                className="w-full px-4 py-2.5 md:py-3 border border-border dark:border-slate-700 rounded-lg bg-white dark:bg-slate-800 text-text dark:text-white placeholder:text-slate-400 dark:placeholder:text-slate-500 focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary transition-all"
+                placeholder="Juan Pérez"
+                required
+              />
+            </div>
+
+            <div>
+              <label className="block text-sm font-medium text-text dark:text-white mb-2">
                 Email
               </label>
               <input
                 type="email"
-                value={email}
-                onChange={(e) => setEmail(e.target.value)}
+                name="email"
+                value={formData.email}
+                onChange={handleInputChange}
                 className="w-full px-4 py-2.5 md:py-3 border border-border dark:border-slate-700 rounded-lg bg-white dark:bg-slate-800 text-text dark:text-white placeholder:text-slate-400 dark:placeholder:text-slate-500 focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary transition-all"
                 placeholder="tu@email.com"
                 required
@@ -147,11 +187,29 @@ const Login = () => {
               </label>
               <input
                 type="password"
-                value={password}
-                onChange={(e) => setPassword(e.target.value)}
+                name="password"
+                value={formData.password}
+                onChange={handleInputChange}
                 className="w-full px-4 py-2.5 md:py-3 border border-border dark:border-slate-700 rounded-lg bg-white dark:bg-slate-800 text-text dark:text-white placeholder:text-slate-400 dark:placeholder:text-slate-500 focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary transition-all"
                 placeholder="••••••••"
                 required
+                minLength={6}
+              />
+            </div>
+
+            <div>
+              <label className="block text-sm font-medium text-text dark:text-white mb-2">
+                Confirmar contraseña
+              </label>
+              <input
+                type="password"
+                name="confirmPassword"
+                value={formData.confirmPassword}
+                onChange={handleInputChange}
+                className="w-full px-4 py-2.5 md:py-3 border border-border dark:border-slate-700 rounded-lg bg-white dark:bg-slate-800 text-text dark:text-white placeholder:text-slate-400 dark:placeholder:text-slate-500 focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary transition-all"
+                placeholder="••••••••"
+                required
+                minLength={6}
               />
             </div>
 
@@ -159,18 +217,18 @@ const Login = () => {
               type="submit"
               className="w-full bg-primary text-white py-2.5 md:py-3 rounded-lg font-medium hover:bg-primary/90 transition-colors text-sm md:text-base"
             >
-              Continuar
+              Crear cuenta
             </button>
           </form>
 
           {/* Footer */}
           <p className="text-center text-xs md:text-sm text-slate-500 dark:text-slate-400 mt-6">
-            ¿No tienes cuenta?{' '}
+            ¿Ya tienes cuenta?{' '}
             <button
-              onClick={() => navigate('/register')}
+              onClick={() => navigate('/login')}
               className="text-primary hover:underline font-medium"
             >
-              Crear cuenta
+              Iniciar sesión
             </button>
           </p>
         </div>
@@ -179,4 +237,4 @@ const Login = () => {
   )
 }
 
-export default Login
+export default Register

@@ -4,6 +4,7 @@ import { AuthProvider } from './contexts/AuthContext'
 import { ThemeProvider } from './contexts/ThemeContext'
 import Landing from './pages/Landing'
 import Login from './pages/Login'
+import Register from './pages/Register'
 import Dashboard from './pages/Dashboard'
 import Motores from './pages/Motores'
 import Instancias from './pages/Instancias'
@@ -24,6 +25,7 @@ function App() {
           <Routes>
             <Route path="/" element={<Landing />} />
             <Route path="/login" element={<Login />} />
+            <Route path="/register" element={<Register />} />
 
             {/* Payment status routes */}
             <Route path="/payment/success" element={<PaymentSuccess />} />
