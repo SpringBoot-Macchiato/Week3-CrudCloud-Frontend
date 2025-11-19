@@ -27,30 +27,43 @@ export const AuthProvider = ({ children }) => {
   const login = async (email, password) => {
     try {
       const response = await api.post('/auth/login', { email, password })
-      
-      const { token, role } = response
-      
+
+      const { token, userId, email: userEmail, fullName, role } = response
+
       // Store JWT token
       localStorage.setItem('token', token)
-      
+
       // Create user object
       const userObj = {
-        email,
-        name: email.split('@')[0],
+        id: userId,
+        email: userEmail,
+        name: fullName || userEmail.split('@')[0],
         role,
-        plan: 'FREE' // Default plan
+        plan: 'FREE' // Se actualizará después de obtener el plan activo
       }
-      
+
       setUser(userObj)
       localStorage.setItem('user', JSON.stringify(userObj))
-      
+
+      // Obtener plan activo del usuario
+      try {
+        const activePlans = await api.get(`/users-plans/user/${userId}/active`)
+        if (activePlans && activePlans.length > 0) {
+          userObj.plan = activePlans[0].planName || 'FREE'
+          setUser(userObj)
+          localStorage.setItem('user', JSON.stringify(userObj))
+        }
+      } catch (planError) {
+        console.log('No se pudo cargar el plan activo:', planError)
+      }
+
       return { success: true }
     } catch (error) {
       console.error('Error en login:', error)
       return {
         success: false,
-        error: error.message === 'Password is incorrect' || error.message === 'User not found' 
-          ? 'Credenciales inválidas' 
+        error: error.message === 'Password is incorrect' || error.message === 'User not found'
+          ? 'Credenciales inválidas'
           : 'Error al iniciar sesión. Intenta de nuevo.'
       }
     }
@@ -97,21 +110,34 @@ export const AuthProvider = ({ children }) => {
         credential: credentialToken
       })
 
-      const { token, email, role } = response
+      const { token, userId, email, fullName, role } = response
 
       // Store JWT token
       localStorage.setItem('token', token)
 
       // Create user object
-      const googleUser = {
+      const userObj = {
+        id: userId,
         email,
-        name: email.split('@')[0],
+        name: fullName || email.split('@')[0],
         role,
         plan: 'FREE'
       }
 
-      setUser(googleUser)
-      localStorage.setItem('user', JSON.stringify(googleUser))
+      setUser(userObj)
+      localStorage.setItem('user', JSON.stringify(userObj))
+
+      // Obtener plan activo del usuario
+      try {
+        const activePlans = await api.get(`/users-plans/user/${userId}/active`)
+        if (activePlans && activePlans.length > 0) {
+          userObj.plan = activePlans[0].planName || 'FREE'
+          setUser(userObj)
+          localStorage.setItem('user', JSON.stringify(userObj))
+        }
+      } catch (planError) {
+        console.log('No se pudo cargar el plan activo:', planError)
+      }
 
       return { success: true }
     } catch (error) {
@@ -119,6 +145,49 @@ export const AuthProvider = ({ children }) => {
       return {
         success: false,
         error: 'Error al autenticar con Google. Intenta de nuevo.'
+      }
+    }
+  }
+
+  const githubLogin = async (code) => {
+    try {
+      const response = await api.post('/auth/github/login', { code })
+
+      const { token, userId, email, fullName, role } = response
+
+      // Store JWT token
+      localStorage.setItem('token', token)
+
+      // Create user object
+      const userObj = {
+        id: userId,
+        email,
+        name: fullName || email.split('@')[0],
+        role,
+        plan: 'FREE'
+      }
+
+      setUser(userObj)
+      localStorage.setItem('user', JSON.stringify(userObj))
+
+      // Obtener plan activo del usuario
+      try {
+        const activePlans = await api.get(`/users-plans/user/${userId}/active`)
+        if (activePlans && activePlans.length > 0) {
+          userObj.plan = activePlans[0].planName || 'FREE'
+          setUser(userObj)
+          localStorage.setItem('user', JSON.stringify(userObj))
+        }
+      } catch (planError) {
+        console.log('No se pudo cargar el plan activo:', planError)
+      }
+
+      return { success: true }
+    } catch (error) {
+      console.error('Error en GitHub login:', error)
+      return {
+        success: false,
+        error: 'Error al autenticar con GitHub. Intenta de nuevo.'
       }
     }
   }
@@ -134,6 +203,7 @@ export const AuthProvider = ({ children }) => {
     login,
     register,
     googleLogin,
+    githubLogin,
     logout,
     loading
   }

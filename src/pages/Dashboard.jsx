@@ -22,13 +22,15 @@ const Dashboard = () => {
       setInstances(instancesData)
       
       // Cargar plan activo del usuario
-      try {
-        const plansData = await api.get(`/users-plans/user/${user?.id || 1}/active`)
-        if (plansData && plansData.length > 0) {
-          setActivePlan(plansData[0])
+      if (user?.id) {
+        try {
+          const plansData = await api.get(`/users-plans/user/${user.id}/active`)
+          if (plansData && plansData.length > 0) {
+            setActivePlan(plansData[0])
+          }
+        } catch (error) {
+          console.log('No se pudo cargar el plan activo:', error)
         }
-      } catch (error) {
-        console.log('No se pudo cargar el plan activo:', error)
       }
     } catch (error) {
       console.error('Error cargando datos del dashboard:', error)
