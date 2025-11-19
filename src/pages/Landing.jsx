@@ -40,14 +40,14 @@ const Landing = () => {
     },
     {
       name: 'Standard',
-      price: '$29',
+      price: '$5.000 COP',
       instances: '5 instancias',
       features: ['Nombre personalizado', 'Soporte prioritario', 'Rotación de contraseñas'],
       popular: true
     },
     {
       name: 'Premium',
-      price: '$79',
+      price: '$10.000 COP',
       instances: '10 instancias',
       features: ['Todo de Standard', 'Soporte 24/7', 'Backups automáticos', 'Métricas avanzadas']
     }

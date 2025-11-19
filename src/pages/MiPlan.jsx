@@ -45,8 +45,11 @@ const MiPlan = () => {
         // Intentar cargar planes desde el backend
         const planesData = await getPlans()
 
-        // Agregar plan FREE manualmente (no viene del backend)
-        const allPlanes = [
+        // Verificar si el backend ya devuelve el plan FREE
+        const hasFreeplan = planesData.some(plan => plan.name.toUpperCase() === 'FREE')
+
+        // Si el backend NO devuelve el plan FREE, agregarlo manualmente
+        const allPlanes = hasFreeplan ? planesData : [
           {
             id: null,
             name: 'FREE',
