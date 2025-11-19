@@ -1,4 +1,4 @@
-const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:8080/api'
+const API_URL = import.meta.env.VITE_API_URL || 'https://api.macchiato.crudzaso.com/api'
 
 const handleResponse = async (response) => {
   // Si la respuesta es exitosa
