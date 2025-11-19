@@ -1,17 +1,49 @@
 import { useState, useEffect } from 'react'
 import { useNavigate } from 'react-router-dom'
-import { Eye, Pause, Play, Trash2, RotateCw, Plus } from 'lucide-react'
+import { Eye, Pause, Play, Trash2, RotateCw, Plus, AlertCircle } from 'lucide-react'
 import { api } from '../utils/api'
+import { useAuth } from '../contexts/AuthContext'
+import { getUserActivePlan } from '../utils/apiServices'
 
 const Instancias = () => {
   const navigate = useNavigate()
+  const { user } = useAuth()
   const [instancias, setInstancias] = useState([])
   const [loading, setLoading] = useState(true)
   const [actionLoading, setActionLoading] = useState(null)
+  const [planLimits, setPlanLimits] = useState({ maxInstances: 2, planName: 'FREE' })
 
   useEffect(() => {
     loadInstances()
+    loadPlanLimits()
   }, [])
+
+  const loadPlanLimits = async () => {
+    try {
+      if (user?.userId) {
+        const activePlan = await getUserActivePlan(user.userId)
+        setPlanLimits({
+          maxInstances: activePlan.maxInstances || 2,
+          planName: activePlan.planName || 'FREE'
+        })
+      } else {
+        // Usar valores por defecto si no hay userId
+        setPlanLimits({ maxInstances: 2, planName: user?.plan || 'FREE' })
+      }
+    } catch (error) {
+      console.log('No se pudo cargar el plan activo, usando valores por defecto:', error)
+      // Fallback a valores por defecto según el plan del usuario
+      const defaultLimits = {
+        'FREE': 2,
+        'STANDARD': 5,
+        'PREMIUM': 10
+      }
+      setPlanLimits({
+        maxInstances: defaultLimits[user?.plan] || 2,
+        planName: user?.plan || 'FREE'
+      })
+    }
+  }
 
   const loadInstances = async () => {
     try {
@@ -80,11 +112,28 @@ const Instancias = () => {
   const formatDate = (dateString) => {
     if (!dateString) return '-'
     const date = new Date(dateString)
-    return date.toLocaleDateString('es-ES', { 
-      year: 'numeric', 
-      month: '2-digit', 
-      day: '2-digit' 
+    return date.toLocaleDateString('es-ES', {
+      year: 'numeric',
+      month: '2-digit',
+      day: '2-digit'
     })
+  }
+
+  // Contar instancias en estado RUNNING
+  const countRunningInstances = () => {
+    return instancias.filter(inst => inst.state === 'RUNNING').length
+  }
+
+  // Verificar si se puede activar más instancias
+  const canActivateMoreInstances = () => {
+    return countRunningInstances() < planLimits.maxInstances
+  }
+
+  // Verificar si una instancia específica puede ser activada
+  const canActivateInstance = (instanceState) => {
+    if (instanceState === 'RUNNING') return true // Ya está activa
+    if (instanceState !== 'SUSPENDED') return false // Solo se pueden activar las suspendidas
+    return canActivateMoreInstances()
   }
 
   if (loading) {
@@ -111,6 +160,31 @@ const Instancias = () => {
           <span>Nueva instancia</span>
         </button>
       </div>
+
+      {/* Plan Limit Warning */}
+      {!canActivateMoreInstances() && instancias.some(inst => inst.state === 'SUSPENDED') && (
+        <div className="bg-amber-50 dark:bg-amber-900/20 border border-amber-200 dark:border-amber-800 rounded-xl p-4">
+          <div className="flex items-start gap-3">
+            <AlertCircle size={20} className="text-amber-600 dark:text-amber-500 flex-shrink-0 mt-0.5" />
+            <div>
+              <h3 className="font-semibold text-amber-900 dark:text-amber-200 text-sm md:text-base">
+                Límite de instancias activas alcanzado
+              </h3>
+              <p className="text-xs md:text-sm text-amber-800 dark:text-amber-300 mt-1">
+                Tu plan <span className="font-medium">{planLimits.planName}</span> permite hasta {planLimits.maxInstances} instancias activas.
+                Tienes {countRunningInstances()} instancias en ejecución.
+                Para activar más instancias, suspende alguna de las activas o{' '}
+                <button
+                  onClick={() => navigate('/app/mi-plan')}
+                  className="underline font-medium hover:text-amber-900 dark:hover:text-amber-100"
+                >
+                  mejora tu plan
+                </button>.
+              </p>
+            </div>
+          </div>
+        </div>
+      )}
 
       {/* Vista de tabla para desktop/tablet */}
       <div className="hidden md:block bg-white dark:bg-slate-900 rounded-xl border border-border dark:border-slate-700 overflow-hidden">
@@ -170,7 +244,7 @@ const Instancias = () => {
                         >
                           <Pause size={18} className="text-slate-600 dark:text-slate-300" />
                         </button>
-                      ) : instancia.state === 'SUSPENDED' ? (
+                      ) : instancia.state === 'SUSPENDED' && canActivateInstance(instancia.state) ? (
                         <button
                           onClick={() => handleAction('resume', instancia.id)}
                           disabled={actionLoading !== null}
@@ -253,7 +327,7 @@ const Instancias = () => {
                 >
                   <Pause size={18} className="text-slate-600 dark:text-slate-300" />
                 </button>
-              ) : instancia.state === 'SUSPENDED' ? (
+              ) : instancia.state === 'SUSPENDED' && canActivateInstance(instancia.state) ? (
                 <button
                   onClick={() => handleAction('resume', instancia.id)}
                   disabled={actionLoading !== null}
