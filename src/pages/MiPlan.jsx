@@ -2,11 +2,26 @@ import { useState, useEffect } from 'react'
 import { Check, Loader2 } from 'lucide-react'
 import { useAuth } from '../contexts/AuthContext'
 import { api } from '../utils/api'
+import {
+  getPlans,
+  getMyPayments,
+  createPlanCheckout,
+  getUserActivePlan,
+  formatPrice,
+  formatDate,
+  getPaymentStatusText,
+  getPaymentStatusClass
+} from '../utils/apiServices'
 
 const MiPlan = () => {
   const { user } = useAuth()
   const [loadingPlan, setLoadingPlan] = useState(null)
   const [mp, setMp] = useState(null)
+  const [planes, setPlanes] = useState([])
+  const [payments, setPayments] = useState([])
+  const [activePlan, setActivePlan] = useState(null)
+  const [loading, setLoading] = useState(true)
+  const [error, setError] = useState(null)
 
   // Inicializar Mercado Pago SDK
   useEffect(() => {
@@ -19,59 +34,146 @@ const MiPlan = () => {
     }
   }, [])
 
-  const planes = [
-    {
-      name: 'Free',
-      price: '$0',
-      planId: null, // Free no tiene planId porque es gratuito
-      instancias: 2,
-      features: [
-        'Hasta 2 instancias',
+  // Cargar datos del backend
+  useEffect(() => {
+    const fetchData = async () => {
+      try {
+        setLoading(true)
+        setError(null)
+
+        // Intentar cargar planes desde el backend
+        const planesData = await getPlans()
+
+        // Agregar plan FREE manualmente (no viene del backend)
+        const allPlanes = [
+          {
+            id: null,
+            name: 'FREE',
+            price: 0,
+            maxInstances: 2,
+            features: {
+              customName: false,
+              prioritySupport: false,
+              passwordRotation: false,
+              autoBackups: false,
+              advancedMetrics: false
+            }
+          },
+          ...planesData
+        ]
+
+        setPlanes(allPlanes)
+
+        // Si el usuario está autenticado, cargar su plan activo y pagos
+        if (user?.userId) {
+          try {
+            const [activePlanData, paymentsData] = await Promise.all([
+              getUserActivePlan(user.userId),
+              getMyPayments()
+            ])
+            setActivePlan(activePlanData)
+            setPayments(paymentsData)
+          } catch (err) {
+            // Si no hay plan activo o pagos, no es un error crítico
+            console.log('No active plan or payments found:', err)
+          }
+        }
+      } catch (err) {
+        console.error('Error fetching data:', err)
+        setError('No se pudo conectar con el backend. Usando datos de ejemplo.')
+
+        // Fallback a planes hardcodeados si el backend falla
+        setPlanes([
+          {
+            id: null,
+            name: 'FREE',
+            price: 0,
+            maxInstances: 2,
+            features: {
+              customName: false,
+              prioritySupport: false,
+              passwordRotation: false,
+              autoBackups: false,
+              advancedMetrics: false
+            }
+          },
+          {
+            id: 1,
+            name: 'STANDARD',
+            price: 1000,
+            maxInstances: 5,
+            features: {
+              customName: true,
+              prioritySupport: true,
+              passwordRotation: true,
+              autoBackups: false,
+              advancedMetrics: false
+            }
+          },
+          {
+            id: 2,
+            name: 'PREMIUM',
+            price: 2000,
+            maxInstances: 10,
+            features: {
+              customName: true,
+              prioritySupport: true,
+              passwordRotation: true,
+              autoBackups: true,
+              advancedMetrics: true
+            }
+          }
+        ])
+      } finally {
+        setLoading(false)
+      }
+    }
+
+    fetchData()
+  }, [user?.userId])
+
+  // Convertir features del backend a array de texto para la UI
+  const getFeaturesArray = (plan) => {
+    const baseFeatures = [
+      `Hasta ${plan.maxInstances} instancias`,
+      'Acceso a todos los motores',
+    ]
+
+    const features = plan.features || {}
+
+    if (plan.name === 'FREE') {
+      return [
+        ...baseFeatures,
         'Nombre de base de datos automático',
         'Soporte básico',
-        'Acceso a todos los motores',
-      ],
-    },
-    {
-      name: 'Standard',
-      price: '$1,000 COP',
-      planId: 1, // Standard = planId 1
-      instancias: 5,
-      features: [
-        'Hasta 5 instancias',
-        'Nombre personalizado',
-        'Soporte prioritario',
-        'Acceso a todos los motores',
-        'Rotación de contraseñas',
-      ],
-      popular: true,
-    },
-    {
-      name: 'Premium',
-      price: '$2,000 COP',
-      planId: 2, // Premium = planId 2
-      instancias: 10,
-      features: [
-        'Hasta 10 instancias',
-        'Nombre personalizado',
-        'Soporte 24/7',
-        'Acceso a todos los motores',
-        'Rotación de contraseñas',
-        'Backups automáticos',
-        'Métricas avanzadas',
-      ],
-    },
-  ]
+      ]
+    }
 
-  const isCurrentPlan = (planName) => {
-    return user?.plan === planName.toUpperCase()
+    const additionalFeatures = []
+    if (features.customName) additionalFeatures.push('Nombre personalizado')
+    if (features.prioritySupport) {
+      additionalFeatures.push(plan.name === 'PREMIUM' ? 'Soporte 24/7' : 'Soporte prioritario')
+    }
+    if (features.passwordRotation) additionalFeatures.push('Rotación de contraseñas')
+    if (features.autoBackups) additionalFeatures.push('Backups automáticos')
+    if (features.advancedMetrics) additionalFeatures.push('Métricas avanzadas')
+
+    return [...baseFeatures, ...additionalFeatures]
   }
 
-  const getButtonText = (planName) => {
-    if (isCurrentPlan(planName)) {
+  const isCurrentPlan = (planName) => {
+    // Usar activePlan del backend si está disponible, sino usar user.plan
+    const currentPlanName = activePlan?.planName || user?.plan || 'FREE'
+    return currentPlanName === planName.toUpperCase()
+  }
+
+  const getButtonText = (plan) => {
+    if (isCurrentPlan(plan.name)) {
       return 'Plan actual'
     }
-    return `Cambiar a ${planName}`
+    // Capitalizar primera letra para mejor presentación
+    const displayName = plan.name.charAt(0) + plan.name.slice(1).toLowerCase()
+    return `Cambiar a ${displayName}`
   }
 
   const handlePlanChange = async (plan) => {
@@ -81,7 +183,7 @@ const MiPlan = () => {
 
     try {
       // Si es plan Free, no requiere pago
-      if (plan.name === 'Free' || !plan.planId) {
+      if (plan.name === 'FREE' || !plan.id) {
         alert('El plan Free no requiere pago. Funcionalidad de cambio a Free pendiente de implementar.')
         setLoadingPlan(null)
         return
@@ -119,31 +221,17 @@ const MiPlan = () => {
         return
       }
 
-      // Modo producción: llamar al backend para crear la preferencia
-      const response = await fetch(`${import.meta.env.VITE_API_URL}/payments/create/plan`, {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          'Authorization': `Bearer ${token}`
-        },
-        body: JSON.stringify({ planId: plan.planId })
-      })
+      // Modo producción: usar apiServices para crear la preferencia
+      const { preferenceId } = await createPlanCheckout(plan.id)
 
-      if (!response.ok) {
-        const errorData = await response.json().catch(() => ({}))
-        throw new Error(errorData.error || `Error HTTP: ${response.status}`)
-      }
-
-      const data = await response.json()
-
-      if (!data.preferenceId) {
+      if (!preferenceId) {
         throw new Error('No se recibió preferenceId del backend')
       }
 
       // Abrir el checkout de Mercado Pago como modal
       mp.checkout({
         preference: {
-          id: data.preferenceId
+          id: preferenceId
         },
         autoOpen: true
       })
@@ -169,97 +257,160 @@ const MiPlan = () => {
     }
   }
 
+  // Loading state
+  if (loading) {
+    return (
+      <div className="flex items-center justify-center min-h-[400px]">
+        <div className="text-center">
+          <Loader2 size={48} className="animate-spin text-primary mx-auto mb-4" />
+          <p className="text-slate-600 dark:text-slate-400">Cargando planes...</p>
+        </div>
+      </div>
+    )
+  }
+
   return (
     <div className="space-y-6 md:space-y-8">
       {/* Header */}
       <div>
         <h1 className="text-2xl md:text-3xl font-semibold text-text dark:text-white mb-2">Mi plan</h1>
         <p className="text-sm md:text-base text-slate-500 dark:text-slate-400">
-          Plan actual: <span className="font-medium text-text dark:text-white">{user?.plan}</span>
+          Plan actual: <span className="font-medium text-text dark:text-white">
+            {activePlan?.planName || user?.plan || 'FREE'}
+          </span>
         </p>
+        {error && (
+          <p className="text-xs md:text-sm text-yellow-600 dark:text-yellow-500 mt-2">
+            ⚠️ {error}
+          </p>
+        )}
       </div>
 
       {/* Grid de planes */}
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-4 md:gap-6">
-        {planes.map((plan) => (
-          <div
-            key={plan.name}
-            className={`bg-white dark:bg-slate-900 rounded-xl border-2 p-6 md:p-8 relative ${
-              isCurrentPlan(plan.name)
-                ? 'border-success'
-                : plan.popular
-                ? 'border-primary'
-                : 'border-border dark:border-slate-700'
-            }`}
-          >
-            {isCurrentPlan(plan.name) && (
-              <div className="absolute -top-3 left-1/2 -translate-x-1/2">
-                <span className="bg-success text-white px-4 py-1 rounded-full text-xs font-medium">
-                  Plan activo
-                </span>
-              </div>
-            )}
-            {plan.popular && !isCurrentPlan(plan.name) && (
-              <div className="absolute -top-3 left-1/2 -translate-x-1/2">
-                <span className="bg-primary text-white px-4 py-1 rounded-full text-xs font-medium">
-                  Más popular
-                </span>
-              </div>
-            )}
+        {planes.map((plan) => {
+          const isPopular = plan.name === 'STANDARD'
+          const displayName = plan.name.charAt(0) + plan.name.slice(1).toLowerCase()
+          const featuresArray = getFeaturesArray(plan)
 
-            <div className="text-center mb-6">
-              <h3 className="text-xl md:text-2xl font-semibold text-text dark:text-white mb-2">{plan.name}</h3>
-              <div className="flex items-baseline justify-center gap-1">
-                <span className="text-3xl md:text-4xl font-bold text-text dark:text-white">{plan.price}</span>
-                <span className="text-sm md:text-base text-slate-500 dark:text-slate-400">/mes</span>
-              </div>
-            </div>
-
-            <div className="mb-6">
-              <p className="text-center text-xs md:text-sm font-medium text-text dark:text-white mb-4">
-                Hasta {plan.instancias} instancias
-              </p>
-            </div>
-
-            <ul className="space-y-3 mb-6 md:mb-8">
-              {plan.features.map((feature) => (
-                <li key={feature} className="flex items-start gap-3">
-                  <div className="w-5 h-5 rounded-full bg-success/10 flex items-center justify-center flex-shrink-0 mt-0.5">
-                    <Check size={14} className="text-success" />
-                  </div>
-                  <span className="text-xs md:text-sm text-slate-600 dark:text-slate-300">{feature}</span>
-                </li>
-              ))}
-            </ul>
-
-            <button
-              onClick={() => handlePlanChange(plan)}
-              className={`w-full py-2.5 md:py-3 rounded-lg font-medium text-sm md:text-base transition-colors flex items-center justify-center gap-2 ${
+          return (
+            <div
+              key={plan.id || plan.name}
+              className={`bg-white dark:bg-slate-900 rounded-xl border-2 p-6 md:p-8 relative ${
                 isCurrentPlan(plan.name)
-                  ? 'bg-slate-100 dark:bg-slate-800 text-slate-400 dark:text-slate-500 cursor-not-allowed'
-                  : plan.popular
-                  ? 'bg-primary text-white hover:bg-primary/90'
-                  : 'border-2 border-border dark:border-slate-700 text-text dark:text-white hover:bg-slate-50 dark:hover:bg-slate-800'
+                  ? 'border-success'
+                  : isPopular
+                  ? 'border-primary'
+                  : 'border-border dark:border-slate-700'
               }`}
-              disabled={isCurrentPlan(plan.name) || loadingPlan !== null}
             >
-              {loadingPlan === plan.name ? (
-                <>
-                  <Loader2 size={18} className="animate-spin" />
-                  Procesando...
-                </>
-              ) : (
-                getButtonText(plan.name)
+              {isCurrentPlan(plan.name) && (
+                <div className="absolute -top-3 left-1/2 -translate-x-1/2">
+                  <span className="bg-success text-white px-4 py-1 rounded-full text-xs font-medium">
+                    Plan activo
+                  </span>
+                </div>
               )}
-            </button>
-          </div>
-        ))}
+              {isPopular && !isCurrentPlan(plan.name) && (
+                <div className="absolute -top-3 left-1/2 -translate-x-1/2">
+                  <span className="bg-primary text-white px-4 py-1 rounded-full text-xs font-medium">
+                    Más popular
+                  </span>
+                </div>
+              )}
+
+              <div className="text-center mb-6">
+                <h3 className="text-xl md:text-2xl font-semibold text-text dark:text-white mb-2">
+                  {displayName}
+                </h3>
+                <div className="flex items-baseline justify-center gap-1">
+                  <span className="text-3xl md:text-4xl font-bold text-text dark:text-white">
+                    {formatPrice(plan.price)}
+                  </span>
+                  <span className="text-sm md:text-base text-slate-500 dark:text-slate-400">/mes</span>
+                </div>
+              </div>
+
+              <div className="mb-6">
+                <p className="text-center text-xs md:text-sm font-medium text-text dark:text-white mb-4">
+                  Hasta {plan.maxInstances} instancias
+                </p>
+              </div>
+
+              <ul className="space-y-3 mb-6 md:mb-8">
+                {featuresArray.map((feature, index) => (
+                  <li key={index} className="flex items-start gap-3">
+                    <div className="w-5 h-5 rounded-full bg-success/10 flex items-center justify-center flex-shrink-0 mt-0.5">
+                      <Check size={14} className="text-success" />
+                    </div>
+                    <span className="text-xs md:text-sm text-slate-600 dark:text-slate-300">{feature}</span>
+                  </li>
+                ))}
+              </ul>
+
+              <button
+                onClick={() => handlePlanChange(plan)}
+                className={`w-full py-2.5 md:py-3 rounded-lg font-medium text-sm md:text-base transition-colors flex items-center justify-center gap-2 ${
+                  isCurrentPlan(plan.name)
+                    ? 'bg-slate-100 dark:bg-slate-800 text-slate-400 dark:text-slate-500 cursor-not-allowed'
+                    : isPopular
+                    ? 'bg-primary text-white hover:bg-primary/90'
+                    : 'border-2 border-border dark:border-slate-700 text-text dark:text-white hover:bg-slate-50 dark:hover:bg-slate-800'
+                }`}
+                disabled={isCurrentPlan(plan.name) || loadingPlan !== null}
+              >
+                {loadingPlan === plan.name ? (
+                  <>
+                    <Loader2 size={18} className="animate-spin" />
+                    Procesando...
+                  </>
+                ) : (
+                  getButtonText(plan)
+                )}
+              </button>
+            </div>
+          )
+        })}
       </div>
 
       {/* Historial de pagos */}
       <div className="bg-white dark:bg-slate-900 rounded-xl border border-border dark:border-slate-700 p-4 md:p-6">
-        <h2 className="text-base md:text-lg font-semibold text-text dark:text-white mb-4">Historial de pagos</h2>
-        <div className="text-xs md:text-sm text-slate-500 dark:text-slate-400">No hay transacciones registradas</div>
+        <h2 className="text-base md:text-lg font-semibold text-text dark:text-white mb-4">
+          Historial de pagos
+        </h2>
+        {payments.length === 0 ? (
+          <div className="text-xs md:text-sm text-slate-500 dark:text-slate-400">
+            No hay transacciones registradas
+          </div>
+        ) : (
+          <div className="space-y-3">
+            {payments.map((payment) => (
+              <div
+                key={payment.id}
+                className="flex flex-col md:flex-row md:items-center justify-between gap-3 p-4 border border-border dark:border-slate-700 rounded-lg"
+              >
+                <div className="flex-1">
+                  <div className="flex items-center gap-2 mb-1">
+                    <span className="font-medium text-text dark:text-white">
+                      Plan {payment.externalReference || 'N/A'}
+                    </span>
+                    <span className={`px-2 py-0.5 rounded-full text-xs font-medium ${getPaymentStatusClass(payment.status)}`}>
+                      {getPaymentStatusText(payment.status)}
+                    </span>
+                  </div>
+                  <p className="text-xs md:text-sm text-slate-500 dark:text-slate-400">
+                    {formatDate(payment.createdAt)} · ID: {payment.paymentId || payment.id}
+                  </p>
+                </div>
+                <div className="text-right">
+                  <p className="font-semibold text-text dark:text-white">
+                    ${payment.amount.toLocaleString('es-CO')} {payment.currency || 'COP'}
+                  </p>
+                </div>
+              </div>
+            ))}
+          </div>
+        )}
       </div>
     </div>
   )

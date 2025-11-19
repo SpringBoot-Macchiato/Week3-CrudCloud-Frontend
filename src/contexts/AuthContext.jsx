@@ -36,6 +36,7 @@ export const AuthProvider = ({ children }) => {
       // Create user object
       const userObj = {
         id: userId,
+        userId: userId, // Agregar userId para compatibilidad con MiPlan.jsx
         email: userEmail,
         name: fullName || userEmail.split('@')[0],
         role,
@@ -80,7 +81,7 @@ export const AuthProvider = ({ children }) => {
 
       // Después del registro exitoso, hacer login automático
       const loginResult = await login(email, password)
-      
+
       if (loginResult.success) {
         return { success: true }
       } else {
@@ -88,7 +89,7 @@ export const AuthProvider = ({ children }) => {
       }
     } catch (error) {
       console.error('Error en registro:', error)
-      
+
       // Manejar errores específicos
       if (error.message.includes('already registered')) {
         return {
@@ -96,7 +97,7 @@ export const AuthProvider = ({ children }) => {
           error: 'Este correo ya está registrado'
         }
       }
-      
+
       return {
         success: false,
         error: 'Error al crear la cuenta. Verifica tus datos e intenta de nuevo.'
@@ -118,6 +119,7 @@ export const AuthProvider = ({ children }) => {
       // Create user object
       const userObj = {
         id: userId,
+        userId: userId, // Agregar userId para compatibilidad con MiPlan.jsx
         email,
         name: fullName || email.split('@')[0],
         role,
@@ -161,6 +163,7 @@ export const AuthProvider = ({ children }) => {
       // Create user object
       const userObj = {
         id: userId,
+        userId: userId, // Agregar userId para compatibilidad con MiPlan.jsx
         email,
         name: fullName || email.split('@')[0],
         role,
