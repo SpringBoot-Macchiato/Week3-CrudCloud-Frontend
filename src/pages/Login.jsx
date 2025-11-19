@@ -36,25 +36,27 @@ const Login = () => {
     }
   }
 
-  const handleGoogleLoginSuccess = async (tokenResponse) => {
-    setGoogleLoading(true)
-    setError(null)
+const handleGoogleLoginSuccess = async (tokenResponse) => {
+  setGoogleLoading(true)
+  setError(null)
 
-    try {
-      const result = await googleLogin(tokenResponse.access_token)
+  try {
+    const result = await googleLogin(tokenResponse.credential) // CORREGIDO
 
-      if (result.success) {
-        navigate('/app/dashboard')
-      } else {
-        setError(result.error || 'Error al autenticar con Google')
-      }
-    } catch (err) {
-      console.error('Error en Google login:', err)
-      setError('Error al procesar la autenticación con Google')
-    } finally {
-      setGoogleLoading(false)
+    if (result.success) {
+      navigate('/app/dashboard')
+    } else {
+      setError(result.error || 'Error al autenticar con Google')
     }
+  } catch (err) {
+    console.error('Error en Google login:', err)
+    setError('Error al procesar la autenticación con Google')
+  } finally {
+    setGoogleLoading(false)
   }
+}
+
+
 
   const handleGoogleLoginError = (error) => {
     console.error('Google login error:', error)
