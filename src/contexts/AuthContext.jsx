@@ -106,50 +106,50 @@ export const AuthProvider = ({ children }) => {
   }
 
   const googleLogin = async (credentialToken) => {
-  try {
-    // Enviar el token con el nombre QUE ESPERA EL BACKEND
-    const response = await api.post('/auth/google/login', {
-      token: credentialToken
-    })
-
-    const { token, userId, email, fullName, role } = response.data
-
-    localStorage.setItem('token', token)
-
-    const userObj = {
-      id: userId,
-      userId,
-      email,
-      name: fullName || email.split('@')[0],
-      role,
-      plan: 'FREE'
-    }
-
-    setUser(userObj)
-    localStorage.setItem('user', JSON.stringify(userObj))
-
     try {
-      const activePlans = await api.get(`/users-plans/user/${userId}/active`)
-      
-      if (activePlans?.data?.length > 0) {
-        userObj.plan = activePlans.data[0].planName || 'FREE'
-        setUser(userObj)
-        localStorage.setItem('user', JSON.stringify(userObj))
+      // Enviar el token con el nombre QUE ESPERA EL BACKEND
+      const response = await api.post('/auth/google/login', {
+        token: credentialToken
+      })
+
+      const { token, userId, email, fullName, role } = response
+
+      localStorage.setItem('token', token)
+
+      const userObj = {
+        id: userId,
+        userId,
+        email,
+        name: fullName || email.split('@')[0],
+        role,
+        plan: 'FREE'
       }
-    } catch (planError) {
-      console.log('No se pudo cargar el plan activo:', planError)
-    }
 
-    return { success: true }
+      setUser(userObj)
+      localStorage.setItem('user', JSON.stringify(userObj))
 
-  } catch (error) {
-    console.error('Error en Google login:', error)
-    return {
-      success: false,
-      error: 'Error al autenticar con Google. Intenta de nuevo.'
+      try {
+        const activePlans = await api.get(`/users-plans/user/${userId}/active`)
+
+        if (activePlans?.length > 0) {
+          userObj.plan = activePlans[0].planName || 'FREE'
+          setUser(userObj)
+          localStorage.setItem('user', JSON.stringify(userObj))
+        }
+      } catch (planError) {
+        console.log('No se pudo cargar el plan activo:', planError)
+      }
+
+      return { success: true }
+
+    } catch (error) {
+      console.error('Error en Google login:', error)
+      return {
+        success: false,
+        error: 'Error al autenticar con Google. Intenta de nuevo.'
+      }
     }
   }
-}
 
 
 
