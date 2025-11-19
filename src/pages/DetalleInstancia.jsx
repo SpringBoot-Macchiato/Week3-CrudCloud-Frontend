@@ -2,6 +2,7 @@ import { useState, useEffect } from 'react'
 import { useParams, useNavigate } from 'react-router-dom'
 import { ArrowLeft, Copy, Eye, EyeOff, RotateCw, Download, Loader2 } from 'lucide-react'
 import { api } from '../utils/api'
+import { showError, showConfirm, showCopyableText, showInfo } from '../utils/alerts'
 
 const DetalleInstancia = () => {
   const { id } = useParams()
@@ -23,7 +24,7 @@ const DetalleInstancia = () => {
       setInstancia(data)
     } catch (error) {
       console.error('Error cargando instancia:', error)
-      alert('Error al cargar los detalles de la instancia')
+      await showError('No se pudieron cargar los detalles de la instancia')
       navigate('/app/instancias')
     } finally {
       setLoading(false)
@@ -37,31 +38,39 @@ const DetalleInstancia = () => {
   }
 
   const handleRotatePassword = async () => {
-    if (!window.confirm('¿Estás seguro de que deseas rotar la contraseña? La contraseña actual dejará de funcionar.')) {
+    const result = await showConfirm(
+      'La contraseña actual dejará de funcionar.',
+      '¿Rotar contraseña?',
+      'Sí, rotar',
+      'Cancelar'
+    )
+
+    if (!result.isConfirmed) {
       return
     }
 
     try {
       setRotating(true)
       const newPassword = await api.post(`/instances/${id}/rotate-password`)
-      
-      alert(
-        `Nueva contraseña generada:\n\n${newPassword}\n\n` +
-        `⚠️ Guarda esta contraseña ahora. La contraseña anterior ya no es válida.`
+
+      await showCopyableText(
+        newPassword,
+        'Nueva contraseña generada',
+        '⚠️ Guarda esta contraseña ahora. La contraseña anterior ya no es válida.'
       )
-      
+
       // Recargar la instancia
       await loadInstance()
     } catch (error) {
       console.error('Error rotando contraseña:', error)
-      alert(`Error: ${error.message}`)
+      await showError(error.message || 'Ocurrió un error al rotar la contraseña')
     } finally {
       setRotating(false)
     }
   }
 
-  const handleDownloadPDF = () => {
-    alert('Función de descarga de PDF en desarrollo')
+  const handleDownloadPDF = async () => {
+    await showInfo('Función de descarga de PDF en desarrollo', 'Próximamente')
     // TODO: Implementar generación de PDF con las credenciales
   }
 

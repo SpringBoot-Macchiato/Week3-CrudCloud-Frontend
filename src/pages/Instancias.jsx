@@ -4,6 +4,7 @@ import { Eye, Pause, Play, Trash2, RotateCw, Plus, AlertCircle } from 'lucide-re
 import { api } from '../utils/api'
 import { useAuth } from '../contexts/AuthContext'
 import { getUserActivePlan } from '../utils/apiServices'
+import { showSuccess, showError, showDeleteConfirm, showCopyableText } from '../utils/alerts'
 
 const Instancias = () => {
   const navigate = useNavigate()
@@ -52,7 +53,7 @@ const Instancias = () => {
       setInstancias(data)
     } catch (error) {
       console.error('Error cargando instancias:', error)
-      alert('Error al cargar las instancias')
+      showError('No se pudieron cargar las instancias. Por favor, intenta nuevamente.')
     } finally {
       setLoading(false)
     }
@@ -60,41 +61,44 @@ const Instancias = () => {
 
   const handleAction = async (action, id) => {
     if (actionLoading) return
-    
+
+    // Para delete, mostrar confirmación primero
+    if (action === 'delete') {
+      const result = await showDeleteConfirm('¿Estás seguro de que deseas eliminar esta instancia? Esta acción no se puede deshacer.')
+      if (!result.isConfirmed) {
+        return
+      }
+    }
+
     setActionLoading(`${action}-${id}`)
-    
+
     try {
       switch (action) {
         case 'suspend':
           await api.post(`/instances/${id}/suspend`)
-          alert('Instancia suspendida correctamente')
+          await showSuccess('La instancia ha sido suspendida correctamente')
           break
         case 'resume':
           await api.post(`/instances/${id}/resume`)
-          alert('Instancia reanudada correctamente')
+          await showSuccess('La instancia ha sido reanudada correctamente')
           break
         case 'rotate':
           const newPassword = await api.post(`/instances/${id}/rotate-password`)
-          alert(`Nueva contraseña: ${newPassword}\n\nGuárdala en un lugar seguro.`)
+          await showCopyableText(newPassword, 'Nueva contraseña generada')
           break
         case 'delete':
-          if (window.confirm('¿Estás seguro de que deseas eliminar esta instancia? Esta acción no se puede deshacer.')) {
-            await api.delete(`/instances/${id}`)
-            alert('Instancia eliminada correctamente')
-          } else {
-            setActionLoading(null)
-            return
-          }
+          await api.delete(`/instances/${id}`)
+          await showSuccess('La instancia ha sido eliminada correctamente')
           break
         default:
           break
       }
-      
+
       // Recargar lista de instancias
       await loadInstances()
     } catch (error) {
       console.error(`Error en acción ${action}:`, error)
-      alert(`Error: ${error.message}`)
+      await showError(error.message || 'Ocurrió un error al realizar la operación')
     } finally {
       setActionLoading(null)
     }

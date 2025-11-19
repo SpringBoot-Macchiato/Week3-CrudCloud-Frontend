@@ -12,6 +12,7 @@ import {
   getPaymentStatusText,
   getPaymentStatusClass
 } from '../utils/apiServices'
+import { showInfo, showError } from '../utils/alerts'
 
 const MiPlan = () => {
   const { user } = useAuth()
@@ -184,7 +185,7 @@ const MiPlan = () => {
     try {
       // Si es plan Free, no requiere pago
       if (plan.name === 'FREE' || !plan.id) {
-        alert('El plan Free no requiere pago. Funcionalidad de cambio a Free pendiente de implementar.')
+        await showInfo('El plan Free no requiere pago. Funcionalidad de cambio a Free pendiente de implementar.')
         setLoadingPlan(null)
         return
       }
@@ -197,7 +198,7 @@ const MiPlan = () => {
       // Verificar si hay token de autenticación
       const token = localStorage.getItem('token')
       if (!token) {
-        alert('Debes iniciar sesión para cambiar de plan')
+        await showError('Debes iniciar sesión para cambiar de plan', 'Sesión requerida')
         setLoadingPlan(null)
         return
       }
@@ -252,7 +253,7 @@ const MiPlan = () => {
         errorMessage = `Error: ${error.message}`
       }
 
-      alert(errorMessage)
+      await showError(errorMessage)
       setLoadingPlan(null)
     }
   }

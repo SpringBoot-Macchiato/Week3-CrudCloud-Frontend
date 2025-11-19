@@ -2,6 +2,8 @@ import { useState } from 'react'
 import { X, Loader2 } from 'lucide-react'
 import { useAuth } from '../contexts/AuthContext'
 import { api } from '../utils/api'
+import { showSuccess } from '../utils/alerts'
+import Swal from 'sweetalert2'
 
 const ModalCrearInstancia = ({ motor, onClose, onSuccess }) => {
   const { user } = useAuth()
@@ -33,20 +35,35 @@ const ModalCrearInstancia = ({ motor, onClose, onSuccess }) => {
       }
 
       const response = await api.post('/instances', requestData)
-      
+
       setCreatedInstance(response)
-      
+
       // Mostrar modal con credenciales
-      alert(
-        `✅ Instancia creada exitosamente!\n\n` +
-        `🗄️ Base de datos: ${response.dbName}\n` +
-        `👤 Usuario: ${response.userDb}\n` +
-        `🔑 Contraseña: ${response.password}\n` +
-        `🌐 Host: ${response.host}\n` +
-        `🔌 Puerto: ${response.port}\n\n` +
-        `⚠️ IMPORTANTE: Guarda esta contraseña ahora, no se volverá a mostrar.`
-      )
-      
+      await Swal.fire({
+        icon: 'success',
+        title: 'Instancia creada exitosamente',
+        html: `
+          <div class="text-left space-y-3">
+            <p class="text-amber-600 dark:text-amber-400 font-semibold text-sm mb-4">
+              ⚠️ IMPORTANTE: Guarda estas credenciales ahora, la contraseña no se volverá a mostrar.
+            </p>
+            <div class="bg-slate-100 dark:bg-slate-800 p-4 rounded-lg space-y-2 text-sm">
+              <div><strong>Base de datos:</strong> <code>${response.dbName}</code></div>
+              <div><strong>Usuario:</strong> <code>${response.userDb}</code></div>
+              <div><strong>Contraseña:</strong> <code class="text-error">${response.password}</code></div>
+              <div><strong>Host:</strong> <code>${response.host}</code></div>
+              <div><strong>Puerto:</strong> <code>${response.port}</code></div>
+            </div>
+          </div>
+        `,
+        confirmButtonText: 'Entendido',
+        customClass: {
+          confirmButton: 'bg-success hover:bg-success/90 text-white px-6 py-2.5 rounded-lg font-medium transition-colors',
+          popup: 'rounded-xl',
+        },
+        buttonsStyling: false,
+      })
+
       // Llamar al callback de éxito y cerrar modal
       if (onSuccess) onSuccess()
       onClose()
