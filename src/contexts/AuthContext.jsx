@@ -25,6 +25,7 @@ export const AuthProvider = ({ children }) => {
 
   const login = (email, password) => {
     const mockUser = {
+      userId: null, // Mock login doesn't have userId yet
       email,
       name: email.split('@')[0],
       plan: 'FREE'
@@ -35,6 +36,7 @@ export const AuthProvider = ({ children }) => {
 
   const register = (name, email, password) => {
     const mockUser = {
+      userId: null, // Mock register doesn't have userId yet
       email,
       name,
       plan: 'FREE'
@@ -49,13 +51,14 @@ export const AuthProvider = ({ children }) => {
         credential: credentialToken
       })
 
-      const { token, email, role } = response
+      const { token, email, role, userId } = response
 
       // Store JWT token
       localStorage.setItem('token', token)
 
       // Create user object
       const googleUser = {
+        userId: userId || null,
         email,
         name: email.split('@')[0],
         role,
