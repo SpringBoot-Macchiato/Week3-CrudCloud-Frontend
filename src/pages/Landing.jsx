@@ -1,6 +1,6 @@
 import { useState } from 'react'
 import { useNavigate } from 'react-router-dom'
-import { Database, Zap, Shield, Code, CheckCircle, ArrowRight, Github, Menu, X, Moon, Sun } from 'lucide-react'
+import { Database, Zap, Shield, Code, CheckCircle, ArrowRight, Github, Menu, X, Moon, Sun, Activity, TrendingUp, Server } from 'lucide-react'
 import { useTheme } from '../contexts/ThemeContext'
 
 const Landing = () => {
@@ -200,7 +200,7 @@ const Landing = () => {
             </button>
           </div>
 
-          {/* Hero Image/Demo */}
+          {/* Hero Image/Demo - Dashboard Metrics */}
           <div className="mt-16 relative">
             <div className="bg-white dark:bg-slate-900 rounded-2xl shadow-2xl border border-border dark:border-slate-700 overflow-hidden">
               <div className="bg-slate-100 dark:bg-slate-800 px-6 py-4 border-b border-border dark:border-slate-700 flex items-center gap-2">
@@ -209,11 +209,68 @@ const Landing = () => {
                   <div className="w-3 h-3 rounded-full bg-yellow-500"></div>
                   <div className="w-3 h-3 rounded-full bg-green-500"></div>
                 </div>
-                <span className="ml-4 text-sm text-slate-600 dark:text-slate-400">dashboard.crudzaso.com</span>
+                <span className="ml-4 text-sm text-slate-600 dark:text-slate-400">dashboard.crudcloud.com</span>
               </div>
-              <div className="p-8 bg-gradient-to-br from-slate-50 to-slate-100 dark:from-slate-900 dark:to-slate-800 min-h-[400px] flex items-center justify-center">
-                <div className="text-slate-400 dark:text-slate-600">
-                  <Database size={120} />
+              <div className="p-8 md:p-12 bg-gradient-to-br from-slate-50 to-slate-100 dark:from-slate-900 dark:to-slate-800 min-h-[400px] md:min-h-[500px]">
+                {/* Dashboard with Metrics */}
+                <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-4">
+                  <div className="bg-white dark:bg-slate-800 rounded-xl shadow-lg p-5 border border-slate-200 dark:border-slate-700">
+                    <div className="flex items-center justify-between mb-3">
+                      <span className="text-sm font-medium text-slate-600 dark:text-slate-400">Instancias activas</span>
+                      <Server className="text-primary" size={20} />
+                    </div>
+                    <div className="text-3xl font-bold text-slate-800 dark:text-white mb-1">8</div>
+                    <div className="flex items-center gap-1 text-xs text-success">
+                      <TrendingUp size={14} />
+                      <span>+2 esta semana</span>
+                    </div>
+                  </div>
+                  <div className="bg-white dark:bg-slate-800 rounded-xl shadow-lg p-5 border border-slate-200 dark:border-slate-700">
+                    <div className="flex items-center justify-between mb-3">
+                      <span className="text-sm font-medium text-slate-600 dark:text-slate-400">Uso de CPU</span>
+                      <Activity className="text-primary" size={20} />
+                    </div>
+                    <div className="text-3xl font-bold text-slate-800 dark:text-white mb-1">23%</div>
+                    <div className="w-full bg-slate-200 dark:bg-slate-700 rounded-full h-2">
+                      <div className="bg-primary h-2 rounded-full transition-all duration-1000" style={{width: '23%'}}></div>
+                    </div>
+                  </div>
+                  <div className="bg-white dark:bg-slate-800 rounded-xl shadow-lg p-5 border border-slate-200 dark:border-slate-700">
+                    <div className="flex items-center justify-between mb-3">
+                      <span className="text-sm font-medium text-slate-600 dark:text-slate-400">Memoria</span>
+                      <Database className="text-primary" size={20} />
+                    </div>
+                    <div className="text-3xl font-bold text-slate-800 dark:text-white mb-1">4.2 GB</div>
+                    <div className="w-full bg-slate-200 dark:bg-slate-700 rounded-full h-2">
+                      <div className="bg-success h-2 rounded-full transition-all duration-1000" style={{width: '52%'}}></div>
+                    </div>
+                  </div>
+                </div>
+                <div className="bg-white dark:bg-slate-800 rounded-xl shadow-lg p-6 border border-slate-200 dark:border-slate-700">
+                  <h4 className="text-sm font-semibold text-slate-800 dark:text-white mb-4">Instancias recientes</h4>
+                  <div className="space-y-3">
+                    {[
+                      { name: 'production-mysql', type: 'MySQL', status: 'running' },
+                      { name: 'dev-postgres', type: 'PostgreSQL', status: 'running' },
+                      { name: 'cache-redis', type: 'Redis', status: 'running' }
+                    ].map((instance, i) => (
+                      <div key={i} className="flex items-center justify-between py-2 border-b border-slate-100 dark:border-slate-700 last:border-0">
+                        <div className="flex items-center gap-3">
+                          <div className="w-8 h-8 rounded-lg bg-primary/10 flex items-center justify-center">
+                            <Database className="text-primary" size={16} />
+                          </div>
+                          <div>
+                            <div className="text-sm font-medium text-slate-800 dark:text-white">{instance.name}</div>
+                            <div className="text-xs text-slate-500 dark:text-slate-500">{instance.type}</div>
+                          </div>
+                        </div>
+                        <div className="flex items-center gap-2">
+                          <div className="w-2 h-2 rounded-full bg-success animate-pulse"></div>
+                          <span className="text-xs text-slate-600 dark:text-slate-400 capitalize">{instance.status}</span>
+                        </div>
+                      </div>
+                    ))}
+                  </div>
                 </div>
               </div>
             </div>
