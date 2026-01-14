@@ -1,0 +1,21 @@
+version: '3.8'
+
+services:
+  frontend:
+    # Nombre del contenedor
+    container_name: mi-app-react-front
+    
+    # Construye la imagen usando el Dockerfile en el directorio actual
+    build:
+      context: .
+      dockerfile: Dockerfile
+      
+    # Mapeo de puertos: 
+    # Usaremos el puerto 3001 en el HOST/VPS (el lado izquierdo) 
+    # para evitar el conflicto con Grafana (que usa 3000).
+    # Apunta al puerto 3000 interno del contenedor.
+    ports:
+      - "3002:3000"
+      
+    # Siempre reinicia si el contenedor se detiene
+    restart: always

@@ -1,0 +1,89 @@
+import { useState } from 'react'
+import { useNavigate } from 'react-router-dom'
+import ModalCrearInstancia from '../components/ModalCrearInstancia'
+
+const Motores = () => {
+  const navigate = useNavigate()
+  const [showModal, setShowModal] = useState(false)
+  const [selectedMotor, setSelectedMotor] = useState(null)
+
+  // Motores disponibles según el backend (engines table)
+  const motores = [
+    { id: 1, name: 'MySQL', version: '8.0', status: 'Disponible', icon: '🐬' },
+    { id: 2, name: 'PostgreSQL', version: '15.0', status: 'Disponible', icon: '🐘' },
+    { id: 3, name: 'SQLServer', version: '2022', status: 'Disponible', icon: '💼' },
+    { id: 4, name: 'MongoDB', version: '7.0', status: 'Próximamente', icon: '🍃' },
+    { id: 5, name: 'Redis', version: '7.2', status: 'Próximamente', icon: '⚡' },
+    { id: 6, name: 'Cassandra', version: '4.1', status: 'Próximamente', icon: '🌌' },
+  ]
+
+  const handleCreateInstance = (motor) => {
+    setSelectedMotor(motor)
+    setShowModal(true)
+  }
+
+  const handleSuccessCreate = () => {
+    // Redirigir a la página de instancias después de crear
+    navigate('/app/instancias')
+  }
+
+  return (
+    <div className="space-y-6 md:space-y-8">
+      {/* Header */}
+      <div>
+        <h1 className="text-2xl md:text-3xl font-semibold text-text dark:text-white mb-2">Motores disponibles</h1>
+        <p className="text-sm md:text-base text-slate-500 dark:text-slate-400">Selecciona un motor de base de datos para crear una instancia</p>
+      </div>
+
+      {/* Grid de motores */}
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 md:gap-6">
+        {motores.map((motor) => (
+          <div
+            key={motor.id}
+            className="bg-white dark:bg-slate-900 rounded-xl border border-border dark:border-slate-700 p-4 md:p-6 hover:shadow-sm transition-all group"
+          >
+            <div className="flex items-start justify-between mb-4">
+              <div className="w-12 h-12 rounded-xl bg-slate-50 dark:bg-slate-800 flex items-center justify-center text-2xl">
+                {motor.icon}
+              </div>
+              <span
+                className={`px-3 py-1 rounded-full text-xs font-medium ${
+                  motor.status === 'Disponible'
+                    ? 'bg-success/10 text-success'
+                    : 'bg-slate-100 dark:bg-slate-700 text-slate-600 dark:text-slate-300'
+                }`}
+              >
+                {motor.status}
+              </span>
+            </div>
+
+            <h3 className="text-base md:text-lg font-semibold text-text dark:text-white mb-1">{motor.name}</h3>
+            <p className="text-xs md:text-sm text-slate-500 dark:text-slate-400 mb-4 md:mb-6">Versión {motor.version}</p>
+
+            <button
+              onClick={() => handleCreateInstance(motor)}
+              disabled={motor.status !== 'Disponible'}
+              className={`w-full py-2.5 rounded-lg font-medium text-sm transition-colors ${
+                motor.status === 'Disponible'
+                  ? 'bg-primary text-white hover:bg-primary/90'
+                  : 'bg-slate-100 dark:bg-slate-700 text-slate-400 dark:text-slate-500 cursor-not-allowed'
+              }`}
+            >
+              Crear instancia
+            </button>
+          </div>
+        ))}
+      </div>
+
+      {showModal && (
+        <ModalCrearInstancia
+          motor={selectedMotor}
+          onClose={() => setShowModal(false)}
+          onSuccess={handleSuccessCreate}
+        />
+      )}
+    </div>
+  )
+}
+
+export default Motores
